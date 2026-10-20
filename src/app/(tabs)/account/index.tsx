@@ -4,12 +4,12 @@ import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
 import { useSignIn } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
-import { Card, Screen } from "@/components/ui/layout";
+import { Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { syncStatusLabel } from "@/core/lib/sync-status";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
-import { colors, type } from "@/lib/theme";
+import { colors, latin, radius, type } from "@/lib/theme";
 
 export default function AccountScreen() {
   const user = useCloudStore((state) => state.user);
@@ -32,7 +32,7 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      <Card style={styles.account}>
+      <View style={styles.account}>
         <View style={styles.avatar}>
           {photo ? (
             <Image
@@ -53,7 +53,7 @@ export default function AccountScreen() {
             {user ? (user.email ?? "") : "登入後在每台裝置同步單字集"}
           </Text>
         </View>
-      </Card>
+      </View>
 
       {user ? (
         <>
@@ -98,19 +98,26 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  account: { flexDirection: "row", alignItems: "center", gap: 14 },
+  // The account on the orange poster; the photo is cut to the bubble.
+  account: {
+    gap: 16,
+    padding: 22,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 108,
+    height: 72,
+    borderRadius: radius.bubble,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.fieldInk,
   },
   avatarImage: { width: "100%", height: "100%" },
-  avatarText: { fontSize: 22, fontWeight: "700", color: colors.brand },
-  accountText: { flex: 1, gap: 2 },
-  name: { ...type.section, color: colors.foreground },
-  email: { ...type.hint, color: colors.muted },
+  avatarText: { ...latin.heavy, fontSize: 34, color: colors.field },
+  accountText: { gap: 2 },
+  name: { ...type.display, fontSize: 30, color: colors.fieldInk },
+  email: { ...type.body, color: colors.fieldInk },
 });

@@ -5,13 +5,12 @@ import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { glide, pop, swapIn } from "@/components/ui/motion";
 import { ParticleBurst } from "@/components/ui/particle-burst";
 import { t } from "@/core/lib/i18n";
 import type { RoomReview, RoomState } from "@/core/lib/room-client";
-import { colors, radius, type } from "@/lib/theme";
+import { colors, latin, radius, type } from "@/lib/theme";
 import { PassageText } from "./passage-text";
 import { PlayerList } from "./player-list";
 
@@ -20,24 +19,31 @@ export function RoomFinished({ state }: { state: RoomState }) {
   const winner = state.players[0];
   return (
     <View style={styles.stack}>
-      <Card style={styles.hero}>
-        <View>
+      <View style={styles.hero}>
+        <View style={styles.heroBubble} />
+        <View style={styles.trophy}>
           <Animated.View entering={pop}>
             <SymbolView
               name="trophy.fill"
               size={40}
-              tintColor={colors.success}
+              tintColor={colors.fieldInk}
             />
           </Animated.View>
           <ParticleBurst play={1} count={28} reach={140} />
         </View>
         <Text style={styles.final}>{t("rooms.final")}</Text>
         {winner ? (
-          <Animated.Text entering={swapIn.delay(180)} style={styles.winner}>
-            {winner.name} · {t("rooms.points", { points: winner.score })}
-          </Animated.Text>
+          <Animated.View entering={swapIn.delay(180)}>
+            <Text style={styles.winner} numberOfLines={1}>
+              {winner.name}
+            </Text>
+            <Text style={styles.winnerScore}>
+              {winner.score}
+              <Text style={styles.winnerUnit}> 分</Text>
+            </Text>
+          </Animated.View>
         ) : null}
-      </Card>
+      </View>
       <PlayerList state={state} showScore />
       {state.review ? <Review review={state.review} /> : null}
       <View style={styles.actions}>
@@ -161,9 +167,33 @@ function ReviewItem({
 
 const styles = StyleSheet.create({
   stack: { gap: 20 },
-  hero: { alignItems: "center", gap: 8, paddingVertical: 24 },
-  final: { ...type.section, color: colors.foreground },
-  winner: { fontSize: 18, fontWeight: "600", color: colors.foreground },
+  // The winner on the orange poster, the score at poster size.
+  hero: {
+    overflow: "hidden",
+    gap: 4,
+    padding: 22,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
+  heroBubble: {
+    position: "absolute",
+    bottom: -60,
+    right: -70,
+    width: 210,
+    height: 140,
+    borderRadius: 999,
+    backgroundColor: colors.fieldInk,
+  },
+  trophy: { alignSelf: "flex-start", marginBottom: 10 },
+  final: { ...type.section, color: colors.fieldInk },
+  winner: { ...type.display, color: colors.fieldInk },
+  winnerScore: {
+    ...type.poster,
+    color: colors.fieldInk,
+    fontVariant: ["tabular-nums"],
+  },
+  winnerUnit: { fontSize: 24, fontFamily: undefined, fontWeight: "800", letterSpacing: 0 },
   actions: { gap: 10 },
   review: { gap: 12 },
   section: { ...type.section, color: colors.foreground, paddingHorizontal: 4 },
@@ -183,14 +213,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
+  // The answer-card bubble, filled in green or red.
   letter: {
-    width: 26,
+    width: 39,
     height: 26,
-    borderRadius: radius.control,
+    borderRadius: radius.bubble,
     alignItems: "center",
     justifyContent: "center",
   },
-  letterText: { fontSize: 13, fontWeight: "700", color: "#ffffff" },
+  letterText: { ...latin.bold, fontSize: 15, color: "#ffffff" },
   optionText: { flex: 1, ...type.body, color: colors.foreground },
   yours: { ...type.hint, color: colors.muted },
 });

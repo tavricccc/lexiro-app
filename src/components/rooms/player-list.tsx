@@ -6,7 +6,7 @@ import { ListGroup } from "@/components/ui/list";
 import { glide, pop, swapIn, swapOut } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import type { RoomPlayer, RoomState } from "@/core/lib/room-client";
-import { colors, space, type } from "@/lib/theme";
+import { colors, space, type, latin } from "@/lib/theme";
 
 /** The name a player goes by in a room, as on the web. */
 export function playerName(
@@ -97,10 +97,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.row,
   },
   rank: {
-    width: 22,
+    ...latin.heavy,
+    width: 26,
+    fontSize: 22,
     textAlign: "center",
-    fontWeight: "700",
-    color: colors.muted,
+    color: colors.brand,
     fontVariant: ["tabular-nums"],
   },
   name: { flex: 1, gap: 1 },
@@ -108,7 +109,8 @@ const styles = StyleSheet.create({
   offline: { color: colors.muted },
   tags: { ...type.hint, color: colors.muted },
   score: {
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "800",
     color: colors.foreground,
     fontVariant: ["tabular-nums"],
   },

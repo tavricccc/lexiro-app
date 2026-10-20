@@ -13,7 +13,7 @@ import { t } from "@/core/lib/i18n";
 import { normalizeRoomCode, ROOM_CODE_PATTERN } from "@/core/lib/room-client";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
-import { colors, radius, type } from "@/lib/theme";
+import { colors, latin, radius, type } from "@/lib/theme";
 
 /** Join a friend's room by its code, or open one with questions from your own bank. */
 export default function RoomsScreen() {
@@ -48,15 +48,16 @@ export default function RoomsScreen() {
       ) : null}
 
       <Animated.View layout={glide}>
-        <Card style={styles.card}>
-          <Text style={styles.section}>{t("rooms.joinHeader")}</Text>
+        <View style={styles.poster}>
+          <View style={styles.posterBubble} />
+          <Text style={styles.posterTitle}>{t("rooms.joinHeader")}</Text>
           <View style={styles.join}>
             <TextInput
               accessibilityLabel={t("rooms.codeLabel")}
               value={normalized}
               onChangeText={setCode}
               placeholder={t("rooms.codePlaceholder")}
-              placeholderTextColor={colors.faint}
+              placeholderTextColor="rgba(11,15,20,0.4)"
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={6}
@@ -66,11 +67,12 @@ export default function RoomsScreen() {
             />
             <Button
               label={t("rooms.join")}
+              variant="ink"
               disabled={!valid}
               onPress={() => openRoom(normalized)}
             />
           </View>
-        </Card>
+        </View>
       </Animated.View>
 
       <Animated.View layout={glide}>
@@ -80,7 +82,6 @@ export default function RoomsScreen() {
           <Button
             label={t("rooms.create")}
             icon="plus"
-            variant="ghost"
             disabled={libraryStatus !== "ready"}
             onPress={() => router.push("/rooms/new")}
           />
@@ -91,20 +92,38 @@ export default function RoomsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Joining is the common case: the orange poster, with the code at its size.
+  poster: {
+    overflow: "hidden",
+    gap: 14,
+    padding: 22,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
+  posterBubble: {
+    position: "absolute",
+    top: -64,
+    right: -70,
+    width: 200,
+    height: 134,
+    borderRadius: 999,
+    backgroundColor: colors.fieldInk,
+  },
+  posterTitle: { ...type.display, color: colors.fieldInk, marginTop: 40 },
   card: { gap: 12 },
   section: { ...type.section, color: colors.foreground },
   hint: { ...type.hint, color: colors.muted },
   join: { gap: 10 },
+  // The code is written into one long bubble.
   code: {
-    height: 56,
-    borderRadius: radius.control,
-    borderCurve: "continuous",
-    backgroundColor: colors.inset,
+    ...latin.heavy,
+    height: 72,
+    borderRadius: radius.bubble,
+    backgroundColor: "rgba(255,255,255,0.35)",
     textAlign: "center",
-    fontSize: 24,
-    fontWeight: "600",
-    letterSpacing: 6,
-    fontFamily: "Menlo",
-    color: colors.foreground,
+    fontSize: 36,
+    letterSpacing: 8,
+    color: colors.fieldInk,
   },
 });

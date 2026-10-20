@@ -10,7 +10,7 @@ import { QuestionStage } from "@/components/rooms/question-stage";
 import { RoomFinished } from "@/components/rooms/room-finished";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
-import { Card, EmptyState, Screen } from "@/components/ui/layout";
+import { EmptyState, Screen } from "@/components/ui/layout";
 import { swapIn, swapOut } from "@/components/ui/motion";
 import { useRoom, type RoomConnection } from "@/core/components/rooms/use-room";
 import { t } from "@/core/lib/i18n";
@@ -156,18 +156,23 @@ function Lobby({
   };
   return (
     <View style={styles.lobby}>
-      <Card style={styles.codeCard}>
-        <Text style={styles.hint}>{t("rooms.shareCode")}</Text>
-        <Text selectable style={styles.code}>
+      <View style={styles.codeCard}>
+        <Text style={styles.codeHint}>{t("rooms.shareCode")}</Text>
+        <Text
+          selectable
+          style={styles.code}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           {state.code}
         </Text>
         <Button
           label={t("rooms.copyCode")}
           icon="doc.on.doc"
-          variant="ghost"
+          variant="onField"
           onPress={() => void copy()}
         />
-      </Card>
+      </View>
       <PlayerList
         state={state}
         title={t("rooms.players", { count: state.players.length })}
@@ -203,13 +208,21 @@ const styles = StyleSheet.create({
   },
   noticeText: { ...type.hint, color: colors.muted },
   lobby: { gap: 20 },
-  codeCard: { alignItems: "center", gap: 10, paddingVertical: 24 },
+  // The code is the room's poster: friends read it off this screen.
+  codeCard: {
+    gap: 8,
+    padding: 22,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
+  codeHint: { ...type.section, color: colors.fieldInk },
   code: {
-    fontSize: 40,
-    fontWeight: "700",
-    letterSpacing: 8,
-    fontFamily: "Menlo",
-    color: colors.foreground,
+    ...type.poster,
+    fontSize: 80,
+    lineHeight: 92,
+    letterSpacing: 2,
+    color: colors.fieldInk,
   },
   hint: { ...type.hint, color: colors.muted, textAlign: "center" },
   start: { gap: 10 },

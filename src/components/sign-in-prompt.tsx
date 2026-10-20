@@ -1,14 +1,12 @@
-import { Image } from "expo-image";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/ui/button";
+import { BubbleMark } from "@/components/ui/layout";
 import { t } from "@/core/lib/i18n";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { SignInCancelled } from "@/platform/sign-in";
-import { colors, radius, type } from "@/lib/theme";
-
-const icon = require("../../assets/images/icon.png");
+import { colors, type } from "@/lib/theme";
 
 export function useSignIn() {
   const [busy, setBusy] = useState(false);
@@ -31,7 +29,7 @@ export function SignInPrompt({ body, onSkip }: { body?: string; onSkip?: () => v
   const { busy, signIn } = useSignIn();
   return (
     <View style={styles.root}>
-      <Image source={icon} style={styles.icon} accessible={false} />
+      <BubbleMark size={40} />
       <Text style={styles.title}>{t("startup.signInTitle")}</Text>
       <Text style={styles.body}>{body ?? t("startup.signInBody")}</Text>
       <Button
@@ -56,14 +54,12 @@ export function SignInPrompt({ body, onSkip }: { body?: string; onSkip?: () => v
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
     gap: 12,
     paddingHorizontal: 28,
     backgroundColor: colors.canvas,
   },
-  icon: { width: 88, height: 88, borderRadius: radius.control, borderCurve: "continuous" },
-  title: { ...type.title, color: colors.foreground, marginTop: 8 },
-  body: { ...type.body, color: colors.muted, textAlign: "center", marginBottom: 12 },
+  title: { ...type.display, color: colors.foreground, marginTop: 8 },
+  body: { ...type.body, color: colors.muted, marginBottom: 12 },
   button: { alignSelf: "stretch" },
 });

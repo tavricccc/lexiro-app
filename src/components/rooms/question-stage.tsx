@@ -10,7 +10,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { VerdictMark } from "@/components/ui/verdict-mark";
 import { t } from "@/core/lib/i18n";
 import type { RoomState } from "@/core/lib/room-client";
-import { colors, radius, type } from "@/lib/theme";
+import { colors, isLatin, latin, radius, type } from "@/lib/theme";
 import { PassageText } from "./passage-text";
 import { PlayerList } from "./player-list";
 
@@ -119,7 +119,16 @@ export function QuestionStage({
         </Card>
       ) : null}
 
-      <Text style={wordTask ? styles.wordPrompt : styles.prompt}>
+      <Text
+        style={
+          wordTask
+            ? [
+                styles.wordPrompt,
+                isLatin(question.prompt) && styles.wordPromptLatin,
+              ]
+            : styles.prompt
+        }
+      >
         {question.blank
           ? t("questions.blankLabel", { index: question.blank })
           : question.prompt}
@@ -220,26 +229,34 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   position: {
-    ...type.hint,
-    color: colors.muted,
-    fontVariant: ["tabular-nums"],
-  },
-  timer: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: radius.control,
-    backgroundColor: colors.secondary,
-  },
-  timerUrgent: { backgroundColor: colors.destructiveSoft },
-  timerText: {
-    fontWeight: "600",
+    ...type.section,
     color: colors.foreground,
     fontVariant: ["tabular-nums"],
   },
-  timerTextUrgent: { color: colors.destructive },
+  // The clock sits in an orange bubble and turns red for the last seconds.
+  timer: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: radius.bubble,
+    backgroundColor: colors.field,
+  },
+  timerUrgent: { backgroundColor: colors.destructive },
+  timerText: {
+    fontWeight: "800",
+    color: colors.fieldInk,
+    fontVariant: ["tabular-nums"],
+  },
+  timerTextUrgent: { color: "#ffffff" },
   passage: { gap: 10 },
   passageTitle: { ...type.section, color: colors.foreground },
   wordPrompt: { ...type.display, color: colors.foreground },
+  wordPromptLatin: {
+    ...latin.heavy,
+    fontWeight: undefined,
+    fontSize: 54,
+    lineHeight: 60,
+    letterSpacing: -2,
+  },
   prompt: {
     fontSize: 17,
     lineHeight: 28,
