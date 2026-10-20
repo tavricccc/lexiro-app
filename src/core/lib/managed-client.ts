@@ -15,6 +15,7 @@ import type {
 import { t, type TranslationKey } from "./i18n";
 import { resumeGeneration } from "./generation-connection";
 import { appCheckHeaders } from "@/core/lib/app-check";
+import { fetch as streamingFetch } from "expo/fetch";
 
 export const MANAGED_ACCOUNT_CHANGED = "lexiro:managed-account-changed";
 export function notifyManagedAccountChanged() {
@@ -83,7 +84,7 @@ export async function managedFetch(
       headers.set(name, value);
     let response: Response;
     try {
-      response = await fetch(`${base.replace(/\/$/, "")}${path}`, {
+      response = await (streamingFetch as unknown as typeof fetch)(`${base.replace(/\/$/, "")}${path}`, {
         ...init,
         headers,
       });

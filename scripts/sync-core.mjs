@@ -86,6 +86,18 @@ const PATCHES = {
       'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
     ],
   ],
+  // React Native's own fetch buffers the whole body; AI replies stream, so
+  // they go through expo/fetch, whose response.body is a real ReadableStream.
+  "lib/managed-client.ts": [
+    [
+      'import { appCheckHeaders } from "@/core/lib/app-check";',
+      'import { appCheckHeaders } from "@/core/lib/app-check";\nimport { fetch as streamingFetch } from "expo/fetch";',
+    ],
+    [
+      "response = await fetch(`${base",
+      "response = await (streamingFetch as unknown as typeof fetch)(`${base",
+    ],
+  ],
   // React Native's URL has no protocol setter or searchParams.set.
   "lib/room-client.ts": [
     [
