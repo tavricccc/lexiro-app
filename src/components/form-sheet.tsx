@@ -73,16 +73,17 @@ export function leaveFlow(persistence: DraftPersistence, clear: () => void) {
     router.back();
     return;
   }
+  // Cancel already means leaving, so the only question is the draft's fate:
+  // two buttons, side by side.
   Alert.alert(t("setEditor.unsavedTitle"), undefined, [
-    { text: t("draft.leave"), onPress: () => router.back() },
     {
-      text: t("setEditor.discard"),
+      text: "捨棄",
       style: "destructive",
       onPress: () => {
         clear();
         router.back();
       },
     },
-    { text: t("common.cancel"), style: "cancel" },
+    { text: "保留草稿", isPreferred: true, onPress: () => router.back() },
   ]);
 }
