@@ -135,9 +135,7 @@ export function roomSocketUrl(code: string, ticket: string) {
   const url = new URL(
     `${agentWorkerUrl()}/rooms/${encodeURIComponent(code)}/ws`,
   );
-  url.protocol = url.protocol === "http:" ? "ws:" : "wss:";
-  url.searchParams.set("ticket", ticket);
-  return url.toString();
+  return `${url.toString().replace(/^http/u, "ws")}?ticket=${encodeURIComponent(ticket)}`;
 }
 
 export function normalizeRoomCode(value: string) {

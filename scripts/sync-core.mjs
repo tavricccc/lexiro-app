@@ -86,6 +86,13 @@ const PATCHES = {
       'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
     ],
   ],
+  // React Native's URL has no protocol setter or searchParams.set.
+  "lib/room-client.ts": [
+    [
+      'url.protocol = url.protocol === "http:" ? "ws:" : "wss:";\n  url.searchParams.set("ticket", ticket);\n  return url.toString();',
+      'return `${url.toString().replace(/^http/u, "ws")}?ticket=${encodeURIComponent(ticket)}`;',
+    ],
+  ],
 };
 
 const HEADER = "// Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.\n";
