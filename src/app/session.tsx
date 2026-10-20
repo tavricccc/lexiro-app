@@ -21,7 +21,7 @@ import {
   type WordTask,
 } from "@/lexiro/questions";
 import { speak } from "@/lib/speech";
-import { useApp } from "@/lib/store";
+import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, radius, space, type } from "@/lib/theme";
 
 function parseTasks(value: string | undefined): WordTask[] {
@@ -51,7 +51,7 @@ const answerText = (item: QuestionItem) =>
 
 export default function SessionScreen() {
   const params = useLocalSearchParams<{ setId?: string; tasks?: string; amount?: string }>();
-  const library = useApp((state) => state.library);
+  const library = useLibraryStore((store) => store.state);
   const insets = useSafeAreaInsets();
   const deal = () =>
     buildSession(

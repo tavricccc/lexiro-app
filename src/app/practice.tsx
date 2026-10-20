@@ -9,7 +9,7 @@ import { CheckRow, ListGroup, SwitchRow } from "@/components/ui/list";
 import { Segmented } from "@/components/ui/segmented";
 import { allStudyWords, senseCount, studyWordsFor } from "@/lexiro/library";
 import { availableCount, type WordTask } from "@/lexiro/questions";
-import { useApp } from "@/lib/store";
+import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, space, type } from "@/lib/theme";
 
 const ALL = "";
@@ -17,7 +17,7 @@ const AMOUNTS = [10, 20, 30, 50].map((value) => ({ value, label: String(value) }
 
 export default function PracticeSetupScreen() {
   const params = useLocalSearchParams<{ setId?: string }>();
-  const library = useApp((state) => state.library);
+  const library = useLibraryStore((store) => store.state);
   const insets = useSafeAreaInsets();
   const [setId, setSetId] = useState(params.setId ?? ALL);
   const [meaning, setMeaning] = useState(true);

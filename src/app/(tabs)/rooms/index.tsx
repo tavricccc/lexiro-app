@@ -1,10 +1,10 @@
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { EmptyState, Screen } from "@/components/ui/layout";
-import { useApp } from "@/lib/store";
+import { useCloudStore } from "@/core/stores/cloud-store";
 
 // Live rooms come in a later batch; the tab already holds the web app's place for them.
 export default function RoomsScreen() {
-  const user = useApp((state) => state.user);
+  const user = useCloudStore((state) => state.user);
   if (!user)
     return <SignInPrompt body="登入後就能輸入房號加入，或用自己的題庫開房和朋友即時對戰。" />;
   return (

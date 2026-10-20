@@ -3,14 +3,14 @@ import { useMemo, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
-import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Illustration, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { rise } from "@/components/ui/motion";
 import { Segmented } from "@/components/ui/segmented";
 import { senseCount } from "@/lexiro/library";
-import { useApp } from "@/lib/store";
+import { useCloudStore } from "@/core/stores/cloud-store";
+import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, type } from "@/lib/theme";
 
 type Tab = "tasks" | "recent";
@@ -32,10 +32,9 @@ const STEPS = [
 const openSet = (setId: string) => router.push({ pathname: "/library/[setId]", params: { setId } });
 
 export default function TodayScreen() {
-  const user = useApp((state) => state.user);
-  const library = useApp((state) => state.library);
-  const status = useApp((state) => state.status);
-  const sync = useApp((state) => state.sync);
+  const library = useLibraryStore((store) => store.state);
+  const status = useCloudStore((state) => state.status);
+  const sync = useCloudStore((state) => state.sync);
   const [tab, setTab] = useState<Tab>("tasks");
 
   const recent = useMemo(
@@ -50,8 +49,6 @@ export default function TodayScreen() {
     }),
     [library],
   );
-
-  if (!user) return <SignInPrompt />;
 
   const latest = recent[0];
 

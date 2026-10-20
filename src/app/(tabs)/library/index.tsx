@@ -3,20 +3,19 @@ import { useMemo, useState } from "react";
 import { RefreshControl } from "react-native";
 import Animated from "react-native-reanimated";
 
-import { SignInPrompt } from "@/components/sign-in-prompt";
 import { EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { glide, rise } from "@/components/ui/motion";
 import { senseCount, setsInFolder, sortedFolders } from "@/lexiro/library";
-import { useApp } from "@/lib/store";
+import { useCloudStore } from "@/core/stores/cloud-store";
+import { useLibraryStore } from "@/core/stores/library-store";
 
 const UNCATEGORIZED = "uncategorized";
 
 export default function LibraryScreen() {
-  const user = useApp((state) => state.user);
-  const library = useApp((state) => state.library);
-  const status = useApp((state) => state.status);
-  const sync = useApp((state) => state.sync);
+  const library = useLibraryStore((store) => store.state);
+  const status = useCloudStore((state) => state.status);
+  const sync = useCloudStore((state) => state.sync);
   const [query, setQuery] = useState("");
 
   // Folders in their saved order, then sets the folders do not claim.
@@ -43,8 +42,6 @@ export default function LibraryScreen() {
       }))
       .filter((section) => section.sets.length);
   }, [library, query]);
-
-  if (!user) return <SignInPrompt />;
 
   return (
     <>

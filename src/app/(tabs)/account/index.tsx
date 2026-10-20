@@ -4,28 +4,18 @@ import { useSignIn } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { useApp } from "@/lib/store";
+import { syncStatusLabel } from "@/core/lib/sync-status";
+import { useCloudStore } from "@/core/stores/cloud-store";
+import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, type } from "@/lib/theme";
 
-function syncLabel(status: string, syncedAt: number | null): string {
-  if (status === "syncing") return "同步中…";
-  if (status === "error") return "同步失敗";
-  if (!syncedAt) return "尚未同步";
-  return new Date(syncedAt).toLocaleString("zh-TW", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default function AccountScreen() {
-  const user = useApp((state) => state.user);
-  const status = useApp((state) => state.status);
-  const syncedAt = useApp((state) => state.syncedAt);
-  const library = useApp((state) => state.library);
-  const sync = useApp((state) => state.sync);
-  const signOut = useApp((state) => state.signOut);
+  const user = useCloudStore((state) => state.user);
+  const status = useCloudStore((state) => state.status);
+  const pending = useCloudStore((state) => state.pending);
+  const library = useLibraryStore((store) => store.state);
+  const sync = useCloudStore((state) => state.sync);
+  const signOut = useCloudStore((state) => state.signOut);
   const { busy, signIn } = useSignIn();
 
   const name = user?.displayName || user?.email || "本機使用者";
@@ -55,9 +45,9 @@ export default function AccountScreen() {
         <>
           <ListGroup title="雲端同步">
             <ListRow
-              title="上次同步"
+              title="同步狀態"
               icon="clock"
-              detail={syncLabel(status, syncedAt)}
+              detail={syncStatusLabel(status, pending)}
               accessory={status === "syncing" ? <ActivityIndicator /> : undefined}
             />
             <ListRow title="單字集" icon="rectangle.stack" detail={String(library.sets.length)} />
@@ -69,7 +59,7 @@ export default function AccountScreen() {
             <ListRow
               title="立即同步"
               icon="arrow.triangle.2.circlepath"
-              onPress={status === "syncing" ? undefined : () => void sync()}
+              onPress={status === "syncing" ? undefined : () => void sync({ reconcileAccount: true })}
             />
           </ListGroup>
           <ListGroup>

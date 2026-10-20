@@ -1,4 +1,4 @@
-import type { SenseId, StudyWord, WordKey } from "./types";
+import type { SenseId, StudyWord, WordKey } from "@/core/types";
 
 // Ported from lexiro/components/practice/{practice-content,meaning-questions}.ts
 // so the web and native apps build the same 英選中 / 中選英 items.

@@ -11,12 +11,12 @@ import { glide, rise } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { senseCount, setWords } from "@/lexiro/library";
 import { speak } from "@/lib/speech";
-import { useApp } from "@/lib/store";
+import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, space, type } from "@/lib/theme";
 
 export default function SetScreen() {
   const { setId } = useLocalSearchParams<{ setId: string }>();
-  const library = useApp((state) => state.library);
+  const library = useLibraryStore((store) => store.state);
   const set = library.sets.find((entry) => entry.id === setId);
   const words = useMemo(() => setWords(library, setId), [library, setId]);
   const [query, setQuery] = useState("");
