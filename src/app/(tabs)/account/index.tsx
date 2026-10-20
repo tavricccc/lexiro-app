@@ -1,3 +1,5 @@
+import { Image } from "expo-image";
+import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
 import { useSignIn } from "@/components/sign-in-prompt";
@@ -19,6 +21,9 @@ export default function AccountScreen() {
   const { busy, signIn } = useSignIn();
 
   const name = user?.displayName || user?.email || "本機使用者";
+  // The Google photo, as on the web; the initial stands in without one.
+  const [photoFailed, setPhotoFailed] = useState("");
+  const photo = user?.photoURL && photoFailed !== user.photoURL ? user.photoURL : null;
   const confirmSignOut = () =>
     Alert.alert("登出 Lexiro？", "這台裝置上的單字快取會保留，再次登入同一個帳號時沿用。", [
       { text: "取消", style: "cancel" },
@@ -29,7 +34,16 @@ export default function AccountScreen() {
     <Screen>
       <Card style={styles.account}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{name.slice(0, 1).toUpperCase()}</Text>
+          {photo ? (
+            <Image
+              source={photo}
+              style={styles.avatarImage}
+              accessibilityIgnoresInvertColors
+              onError={() => setPhotoFailed(photo)}
+            />
+          ) : (
+            <Text style={styles.avatarText}>{name.slice(0, 1).toUpperCase()}</Text>
+          )}
         </View>
         <View style={styles.accountText}>
           <Text style={styles.name} numberOfLines={1}>
@@ -91,8 +105,10 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
     backgroundColor: colors.brandSoft,
   },
+  avatarImage: { width: "100%", height: "100%" },
   avatarText: { fontSize: 22, fontWeight: "700", color: colors.brand },
   accountText: { flex: 1, gap: 2 },
   name: { ...type.section, color: colors.foreground },
