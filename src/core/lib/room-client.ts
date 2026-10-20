@@ -104,24 +104,54 @@ export function toRoomQuestions(entries: readonly PracticeEntry[]) {
   });
 }
 
-export function createRoom(input: {
+export async function createRoom(input: {
   name: string;
   title: string;
   seconds: number;
   questions: ReturnType<typeof toRoomQuestions>;
 }) {
-  return agentJson<{ code: string }>("/rooms", {
+  const created = await agentJson<{ code: string }>("/rooms", {
     method: "POST",
     body: JSON.stringify(input),
     signal: AbortSignal.timeout(30_000),
   });
+  activeRoomCheck = null;
+  return created;
 }
 
+type ActiveRoomResponse = {
+  room: { code: string; title: string; phase: string } | null;
+};
+
+/**
+ * Each check wakes up to two Durable Objects, and screens ask on every focus
+ * and return to the foreground. One answer per account serves them for a
+ * minute; creating a room here asks again.
+ */
+export const ACTIVE_ROOM_CHECK_MS = 60_000;
+let activeRoomCheck: {
+  uid: string;
+  at: number;
+  response: Promise<ActiveRoomResponse>;
+} | null = null;
+
 /** The room this person is hosting right now, if any, so this device can take it over. */
-export function fetchActiveRoom() {
-  return agentJson<{
-    room: { code: string; title: string; phase: string } | null;
-  }>("/rooms/active", { method: "GET" });
+export function fetchActiveRoom(uid: string, now = Date.now()) {
+  if (
+    activeRoomCheck?.uid === uid &&
+    now - activeRoomCheck.at < ACTIVE_ROOM_CHECK_MS
+  )
+    return activeRoomCheck.response;
+  const response = agentJson<ActiveRoomResponse>("/rooms/active", {
+    method: "GET",
+  });
+  const check = { uid, at: now, response };
+  activeRoomCheck = check;
+  // A failed check is not worth remembering.
+  response.catch(() => {
+    if (activeRoomCheck === check) activeRoomCheck = null;
+  });
+  return response;
 }
 
 export function requestRoomTicket(code: string, name: string) {

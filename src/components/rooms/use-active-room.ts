@@ -11,19 +11,20 @@ export type ActiveRoom = { code: string; title: string; phase: string };
  * The room this person is hosting, if it is still live. The server only
  * answers for rooms that have not ended, so a room started on another device
  * shows up here the next time a screen asks — on focus, and when the app comes
- * back to the foreground, as the web does on `visibilitychange`.
+ * back to the foreground, as the web does on `visibilitychange`. The client
+ * reuses an answer for a minute, so these checks rarely reach the server.
  */
 export function useActiveRoom() {
-  const signedIn = useCloudStore((store) => store.user !== null);
+  const uid = useCloudStore((store) => store.user?.uid ?? null);
   const [room, setRoom] = useState<ActiveRoom | null>(null);
 
   const check = useCallback(() => {
-    if (!signedIn) {
+    if (!uid) {
       setRoom(null);
       return;
     }
     let cancelled = false;
-    fetchActiveRoom()
+    fetchActiveRoom(uid)
       .then(({ room }) => {
         if (!cancelled) setRoom(room);
       })
@@ -31,7 +32,7 @@ export function useActiveRoom() {
     return () => {
       cancelled = true;
     };
-  }, [signedIn]);
+  }, [uid]);
 
   useFocusEffect(check);
 
