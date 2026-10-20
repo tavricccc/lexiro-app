@@ -26,12 +26,14 @@ export function FormScreen({ children }: { children: ReactNode }) {
 export function SheetHeader({
   title,
   saveLabel,
+  cancelLabel,
   onSave,
   onCancel,
   busy,
 }: {
   title: string;
   saveLabel?: string;
+  cancelLabel?: string;
   onSave?: () => void;
   onCancel: () => void;
   busy?: boolean;
@@ -41,7 +43,7 @@ export function SheetHeader({
       <Stack.Screen options={{ title }} />
       <Stack.Toolbar placement="left">
         <Stack.Toolbar.Button onPress={onCancel} disabled={busy}>
-          {t("common.cancel")}
+          {cancelLabel ?? t("common.cancel")}
         </Stack.Toolbar.Button>
       </Stack.Toolbar>
       {onSave ? (
