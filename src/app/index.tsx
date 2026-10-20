@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 
-// The tabs live under /library, /practice and /account; "/" opens the library.
+// The tabs live under /today, /library, /rooms and /account; "/" opens 今天.
 export default function Index() {
-  return <Redirect href="/library" />;
+  return <Redirect href="/today" />;
 }
