@@ -2,12 +2,13 @@ import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { glide } from "@/components/ui/motion";
+import { glide, pop, swapIn } from "@/components/ui/motion";
+import { ParticleBurst } from "@/components/ui/particle-burst";
 import { t } from "@/core/lib/i18n";
 import type { RoomReview, RoomState } from "@/core/lib/room-client";
 import { colors, radius, type } from "@/lib/theme";
@@ -20,12 +21,19 @@ export function RoomFinished({ state }: { state: RoomState }) {
   return (
     <View style={styles.stack}>
       <Card style={styles.hero}>
-        <Animated.View entering={ZoomIn.springify().damping(11)}>
-          <SymbolView name="trophy.fill" size={40} tintColor={colors.success} />
-        </Animated.View>
+        <View>
+          <Animated.View entering={pop}>
+            <SymbolView
+              name="trophy.fill"
+              size={40}
+              tintColor={colors.success}
+            />
+          </Animated.View>
+          <ParticleBurst play={1} count={28} reach={140} />
+        </View>
         <Text style={styles.final}>{t("rooms.final")}</Text>
         {winner ? (
-          <Animated.Text entering={FadeIn.delay(180)} style={styles.winner}>
+          <Animated.Text entering={swapIn.delay(180)} style={styles.winner}>
             {winner.name} · {t("rooms.points", { points: winner.score })}
           </Animated.Text>
         ) : null}
@@ -101,7 +109,7 @@ function ReviewItem({
           />
         ) : null}
         {passage && showPassage ? (
-          <Animated.View entering={FadeIn} style={styles.passage}>
+          <Animated.View entering={swapIn} style={styles.passage}>
             <PassageText
               passage={passage.text}
               activeBlank={item.question.blank}

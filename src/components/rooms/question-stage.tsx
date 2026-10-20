@@ -1,11 +1,11 @@
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { Card } from "@/components/ui/layout";
-import { swapIn } from "@/components/ui/motion";
+import { enterUp, swapIn } from "@/components/ui/motion";
 import { ProgressBar } from "@/components/ui/progress";
 import { VerdictMark } from "@/components/ui/verdict-mark";
 import { t } from "@/core/lib/i18n";
@@ -136,6 +136,9 @@ export function QuestionStage({
                 used ? t("practice.usedInBlank", { index: used }) : undefined
               }
               state={optionState(index)}
+              celebrate={
+                Boolean(reveal?.accepted.includes(index)) && chosen === index
+              }
               disabled={used !== undefined && !reveal}
               onPress={() => choose(index)}
             />
@@ -145,7 +148,7 @@ export function QuestionStage({
 
       {reveal ? (
         <Animated.View
-          entering={FadeInUp.duration(230).easing(Easing.out(Easing.cubic))}
+          entering={enterUp}
           style={styles.result}
         >
           <View style={styles.verdict}>
@@ -181,7 +184,7 @@ export function QuestionStage({
       ) : (
         <Animated.View entering={swapIn} style={styles.waiting}>
           {state.yourChoice !== null ? (
-            <Animated.Text entering={FadeIn} style={styles.answered}>
+            <Animated.Text entering={swapIn} style={styles.answered}>
               {t("rooms.answered")}
             </Animated.Text>
           ) : null}

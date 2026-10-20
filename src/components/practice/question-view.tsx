@@ -1,13 +1,13 @@
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { Easing, FadeInDown } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { PassageText } from "@/components/rooms/passage-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/layout";
-import { swapIn } from "@/components/ui/motion";
+import { enterDown, swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
 import { VerdictMark } from "@/components/ui/verdict-mark";
@@ -172,6 +172,11 @@ export function QuestionView({
                       : undefined
                   }
                   state={optionState(index)}
+                  celebrate={
+                    !readOnly &&
+                    selected === index &&
+                    isCorrectChoice(item, index)
+                  }
                   disabled={readOnly || (used !== undefined && !answered)}
                   onPress={() => onAnswer(index)}
                 />
@@ -237,7 +242,7 @@ function Feedback({
     item.type === "vocabulary" || item.type === "wordBank" ? item.meaning : "";
   return (
     <Animated.View
-      entering={FadeInDown.duration(230).easing(Easing.out(Easing.cubic))}
+      entering={enterDown}
     >
       <Card style={styles.feedback}>
         <View style={styles.verdict}>

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { Easing, FadeIn, ZoomIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { t } from "@/core/lib/i18n";
 import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, radius, space, type } from "@/lib/theme";
 import type { PracticeChoices } from "./practice-run";
+import { pop, swapIn } from "@/components/ui/motion";
+import { ParticleBurst } from "@/components/ui/particle-burst";
 
 /** The web's result panel: the score and retries. */
 export function ResultView({
@@ -46,22 +48,28 @@ export function ResultView({
       ]}
     >
       <Animated.View
-        entering={ZoomIn.duration(280).easing(Easing.out(Easing.cubic))}
+        entering={pop}
         style={styles.finish}
       >
-        <Animated.View
-          entering={ZoomIn.delay(120)
-            .duration(260)
-            .easing(Easing.out(Easing.back(1.5)))}
-          style={styles.finishMark}
-        >
-          <VerdictMark
-            correct
-            size={28}
-            disc={false}
-            markColor={colors.studyInk}
+        <View>
+          <Animated.View
+            entering={pop.delay(120)}
+            style={styles.finishMark}
+          >
+            <VerdictMark
+              correct
+              size={28}
+              disc={false}
+              markColor={colors.studyInk}
+            />
+          </Animated.View>
+          {/* A good round is celebrated once, from the mark. */}
+          <ParticleBurst
+            play={total && correct / total >= 0.6 ? 1 : 0}
+            count={28}
+            reach={150}
           />
-        </Animated.View>
+        </View>
         <Text style={styles.finishLabel}>{t("practice.resultTitle")}</Text>
         <Text style={styles.finishScore}>
           {correct}
@@ -73,7 +81,7 @@ export function ResultView({
         </View>
       </Animated.View>
 
-      <Animated.View entering={FadeIn.delay(200)} style={styles.actions}>
+      <Animated.View entering={swapIn.delay(200)} style={styles.actions}>
         {wrongCount ? (
           <Button
             label={t("practice.retryWrong")}

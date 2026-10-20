@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -8,6 +8,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { EASE_OUT } from "@/components/ui/motion";
+import { ParticleBurst } from "@/components/ui/particle-burst";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { VerdictMark } from "@/components/ui/verdict-mark";
 import { colors, radius, space } from "@/lib/theme";
@@ -15,20 +17,21 @@ import { colors, radius, space } from "@/lib/theme";
 /** `chosen` is a pick still waiting for its reveal, as in a live room. */
 export type OptionState = "idle" | "chosen" | "right" | "wrong" | "dim";
 
-const FADE = { duration: 190, easing: Easing.out(Easing.quad) };
-const LIFT = { duration: 120, easing: Easing.out(Easing.cubic) };
-const SETTLE = { duration: 200, easing: Easing.out(Easing.cubic) };
-/** One overshoot, then still: a click of confirmation rather than a wobble. */
-const POP = { duration: 260, easing: Easing.out(Easing.back(1.6)) };
+const FADE = { duration: 160, easing: Easing.out(Easing.quad) };
+const LIFT = { duration: 90, easing: Easing.out(Easing.quad) };
+const SETTLE = { duration: 180, easing: EASE_OUT };
+const POP = { duration: 200, easing: EASE_OUT };
 
 /**
- * One answer. The reveal is quiet and exact: the chosen row settles, the right
- * answer lifts once, the rest step back, and the tick/cross pops in.
+ * One answer. The reveal is quick and exact: the chosen row settles, the right
+ * answer lifts once, the rest step back, and the tick/cross pops in. A right
+ * pick of your own also throws a burst of confetti from its tick.
  */
 export function AnswerOption({
   label,
   note,
   state,
+  celebrate = false,
   disabled,
   onPress,
 }: {
@@ -36,19 +39,30 @@ export function AnswerOption({
   /** A line under the option, such as the blank it already fills. */
   note?: string;
   state: OptionState;
+  /** This was your pick and it is right; plays only when it turns true. */
+  celebrate?: boolean;
   disabled?: boolean;
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
   const fade = useSharedValue(1);
   const mark = useSharedValue(0);
+  const [burst, setBurst] = useState(0);
+  // An answer already shown when the option mounts, as when looking back,
+  // does not celebrate again.
+  const celebrated = useRef(celebrate);
+
+  useEffect(() => {
+    if (celebrate && !celebrated.current) setBurst((count) => count + 1);
+    celebrated.current = celebrate;
+  }, [celebrate]);
 
   useEffect(() => {
     fade.set(withTiming(state === "dim" || disabled ? 0.45 : 1, FADE));
 
     scale.set(
       state === "right"
-        ? withSequence(withTiming(1.02, LIFT), withTiming(1, SETTLE))
+        ? withSequence(withTiming(1.03, LIFT), withTiming(1, SETTLE))
         : withTiming(1, SETTLE),
     );
 
@@ -71,7 +85,7 @@ export function AnswerOption({
 
   const answered = state !== "idle" || Boolean(disabled);
   return (
-    <Animated.View style={motion}>
+    <Animated.View style={[motion, burst > 0 && styles.above]}>
       <PressableScale
         scaleTo={0.97}
         accessibilityRole="button"
@@ -93,9 +107,12 @@ export function AnswerOption({
           {note ? <Text style={styles.note}>{note}</Text> : null}
         </View>
         {state === "right" || state === "wrong" ? (
-          <Animated.View style={markMotion}>
-            <VerdictMark correct={state === "right"} size={24} />
-          </Animated.View>
+          <View>
+            <Animated.View style={markMotion}>
+              <VerdictMark correct={state === "right"} size={24} />
+            </Animated.View>
+            <ParticleBurst play={burst} />
+          </View>
         ) : null}
       </PressableScale>
     </Animated.View>
@@ -114,6 +131,8 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     backgroundColor: colors.card,
   },
+  // The burst flies over the neighbouring options, not under them.
+  above: { zIndex: 1 },
   chosen: { backgroundColor: colors.selected },
   right: { backgroundColor: colors.successSoft },
   wrong: { backgroundColor: colors.destructiveSoft },
