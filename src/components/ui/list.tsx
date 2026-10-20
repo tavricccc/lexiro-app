@@ -1,10 +1,20 @@
 import * as Haptics from "expo-haptics";
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
-import { Pressable, StyleSheet, Switch, Text, View, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+  type ViewStyle,
+} from "react-native";
 import Animated, { ZoomIn, ZoomOut } from "react-native-reanimated";
 
 import { BRAND_LIGHT, colors, radius, space, type } from "@/lib/theme";
+import { showActionSheet } from "./menu";
 
 const ICON_INSET = space.row + 24 + 14;
 
@@ -179,6 +189,178 @@ export function SwitchRow({
   );
 }
 
+/** A short value on one line: its label on the left, what you type on the right. */
+export function InputRow({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  invalid,
+  autoFocus,
+  editable = true,
+  autoCapitalize = "none",
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder?: string;
+  invalid?: boolean;
+  autoFocus?: boolean;
+  editable?: boolean;
+  autoCapitalize?: TextInputProps["autoCapitalize"];
+}) {
+  return (
+    <View style={styles.row}>
+      <Text style={[styles.inputLabel, invalid && { color: colors.destructive }]}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        autoFocus={autoFocus}
+        editable={editable}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.faint}
+        style={styles.input}
+        value={value}
+      />
+    </View>
+  );
+}
+
+/** A sentence-length value: the label sits above, the text gets the width. */
+export function TextBlockRow({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  onRemove,
+  removeLabel,
+  editable = true,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder?: string;
+  onRemove?: () => void;
+  removeLabel?: string;
+  editable?: boolean;
+}) {
+  return (
+    <View style={styles.block}>
+      <View style={styles.blockHead}>
+        <Text style={styles.blockLabel}>{label}</Text>
+        {onRemove ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={removeLabel}
+            hitSlop={10}
+            onPress={onRemove}
+          >
+            <SymbolView name="minus.circle.fill" size={20} tintColor={colors.destructive} />
+          </Pressable>
+        ) : null}
+      </View>
+      <TextInput
+        accessibilityLabel={label}
+        autoCorrect={false}
+        editable={editable}
+        multiline
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.faint}
+        scrollEnabled={false}
+        style={styles.blockInput}
+        value={value}
+      />
+    </View>
+  );
+}
+
+/** A tappable verb inside a group: 新增例句, 刪除此詞義. */
+export function ActionRow({
+  title,
+  icon,
+  destructive,
+  disabled,
+  onPress,
+}: {
+  title: string;
+  icon?: SymbolViewProps["name"];
+  destructive?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const tint = destructive ? colors.destructive : colors.brand;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}
+    >
+      <SymbolView
+        name={icon ?? (destructive ? "minus.circle" : "plus.circle")}
+        size={22}
+        tintColor={tint}
+        style={styles.icon}
+      />
+      <Text style={[styles.title, { color: tint }]}>{title}</Text>
+    </Pressable>
+  );
+}
+
+/** Picks one option from a native action sheet; shows the current choice on the right. */
+export function PickerRow<T extends string>({
+  title,
+  icon,
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  title: string;
+  icon?: SymbolViewProps["name"];
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+  disabled?: boolean;
+}) {
+  const current = options.find((option) => option.value === value);
+  return (
+    <ListRow
+      title={title}
+      icon={icon}
+      detail={current?.label}
+      accessory={
+        <SymbolView
+          name="chevron.up.chevron.down"
+          size={13}
+          weight="semibold"
+          tintColor={colors.faint}
+        />
+      }
+      onPress={
+        disabled
+          ? undefined
+          : () =>
+              showActionSheet({
+                title,
+                actions: options.map((option) => ({
+                  label: option.label,
+                  // The current choice is shown greyed out, as iOS has no checkmark here.
+                  disabled: option.value === value,
+                  onSelect: () => {
+                    void Haptics.selectionAsync();
+                    onChange(option.value);
+                  },
+                })),
+              })
+      }
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   group: { gap: 8 },
   groupHeader: {
@@ -211,4 +393,11 @@ const styles = StyleSheet.create({
   subtitle: { ...type.hint, color: colors.muted },
   detail: { fontSize: 17, color: colors.muted, fontVariant: ["tabular-nums"] },
   check: { width: 22, alignItems: "center" },
+  disabled: { opacity: 0.4 },
+  inputLabel: { ...type.row, color: colors.foreground, width: 92 },
+  input: { ...type.row, flex: 1, color: colors.foreground, textAlign: "right", paddingVertical: 4 },
+  block: { gap: 4, paddingHorizontal: space.row, paddingVertical: 12 },
+  blockHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  blockLabel: { ...type.hint, color: colors.muted },
+  blockInput: { ...type.body, color: colors.foreground, minHeight: 24, paddingVertical: 2 },
 });
