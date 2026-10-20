@@ -1,24 +1,16 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
+import { ActiveRoomCard } from "@/components/rooms/active-room-card";
 import { Button } from "@/components/ui/button";
-import { Card, EmptyState, Illustration, Screen } from "@/components/ui/layout";
-import { ListGroup, ListRow } from "@/components/ui/list";
+import { Card, Illustration, Screen } from "@/components/ui/layout";
 import { swapIn } from "@/components/ui/motion";
-import { Segmented } from "@/components/ui/segmented";
 import { senseCount } from "@/lexiro/library";
 import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, type } from "@/lib/theme";
-
-type Tab = "tasks" | "recent";
-
-const TABS = [
-  { value: "tasks", label: "今日任務" },
-  { value: "recent", label: "最近教材" },
-] as const;
 
 const STEPS = [
   { title: "加入想記住的單字", body: "手動輸入，或貼一串字讓 AI 整理成詞義。" },
@@ -33,10 +25,9 @@ const openSet = (setId: string) => router.push({ pathname: "/library/[setId]", p
 
 export default function TodayScreen() {
   const library = useLibraryStore((store) => store.state);
-  const [tab, setTab] = useState<Tab>("tasks");
 
-  const recent = useMemo(
-    () => [...library.sets].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 8),
+  const latest = useMemo(
+    () => [...library.sets].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0],
     [library.sets],
   );
   const totals = useMemo(
@@ -48,91 +39,71 @@ export default function TodayScreen() {
     [library],
   );
 
-  const latest = recent[0];
-
   return (
     <Screen
       refreshControl={<SyncRefreshControl />}
     >
-      <Segmented options={TABS} value={tab} onChange={setTab} />
-
-      <Animated.View key={tab} entering={swapIn} style={styles.panel}>
-        {tab === "tasks" ? (
-          latest ? (
-            <>
-              <Card style={styles.task}>
-                <View style={styles.hero}>
-                  <Illustration size={200} />
-                </View>
-                <Text style={styles.taskHint}>接著練</Text>
-                <Text style={styles.taskTitle} numberOfLines={2}>
-                  {latest.setName}
-                </Text>
-                <Text style={styles.taskBody}>{senseCount(library, latest.id)} 個詞義</Text>
-                <View style={styles.actions}>
-                  <Button
-                    label="看單字"
-                    variant="ghost"
-                    onPress={() => openSet(latest.id)}
-                    style={styles.secondaryAction}
-                  />
-                  <Button
-                    label="開始練習"
-                    icon="play.fill"
-                    onPress={() =>
-                      router.push({ pathname: "/practice", params: { setId: latest.id } })
-                    }
-                    style={styles.primaryAction}
-                  />
-                </View>
-              </Card>
-              <Animated.View entering={swapIn} style={styles.totals}>
-                <Total value={totals.sets} label="單字集" />
-                <Total value={totals.senses} label="詞義" />
-                <Total value={totals.questions} label="題目" />
-              </Animated.View>
-            </>
-          ) : (
-            <>
-              <Card style={styles.intro}>
-                <View style={styles.introText}>
-                  <Text style={styles.introTitle}>先加入一組單字</Text>
-                  <Text style={styles.taskBody}>手動輸入或交給 AI 整理，儲存後就能開始練習。</Text>
-                </View>
-                <Illustration size={104} />
-              </Card>
-              <View style={styles.steps}>
-                {STEPS.map((step, index) => (
-                  <Animated.View key={step.title} entering={swapIn} style={styles.step}>
-                    <View style={styles.stepMark}>
-                      <Text style={styles.stepNumber}>{index + 1}</Text>
-                    </View>
-                    <View style={styles.stepText}>
-                      <Text style={styles.stepTitle}>{step.title}</Text>
-                      <Text style={styles.taskBody}>{step.body}</Text>
-                    </View>
-                  </Animated.View>
-                ))}
+      <View style={styles.panel}>
+        <ActiveRoomCard />
+        {latest ? (
+          <>
+            <Card style={styles.task}>
+              <View style={styles.hero}>
+                <Illustration size={200} />
               </View>
-            </>
-          )
-        ) : recent.length ? (
-          <ListGroup>
-            {recent.map((set) => (
-              <ListRow
-                key={set.id}
-                icon="rectangle.stack"
-                title={set.setName}
-                detail={String(senseCount(library, set.id))}
-                chevron
-                onPress={() => openSet(set.id)}
-              />
-            ))}
-          </ListGroup>
+              <Text style={styles.taskHint}>接著練</Text>
+              <Text style={styles.taskTitle} numberOfLines={2}>
+                {latest.setName}
+              </Text>
+              <Text style={styles.taskBody}>{senseCount(library, latest.id)} 個詞義</Text>
+              <View style={styles.actions}>
+                <Button
+                  label="看單字"
+                  variant="ghost"
+                  onPress={() => openSet(latest.id)}
+                  style={styles.secondaryAction}
+                />
+                <Button
+                  label="開始練習"
+                  icon="play.fill"
+                  onPress={() =>
+                    router.push({ pathname: "/practice", params: { setId: latest.id } })
+                  }
+                  style={styles.primaryAction}
+                />
+              </View>
+            </Card>
+            <Animated.View entering={swapIn} style={styles.totals}>
+              <Total value={totals.sets} label="單字集" />
+              <Total value={totals.senses} label="詞義" />
+              <Total value={totals.questions} label="題目" />
+            </Animated.View>
+          </>
         ) : (
-          <EmptyState title="還沒有教材" body="新增的單字集會出現在這裡。" />
+          <>
+            <Card style={styles.intro}>
+              <View style={styles.introText}>
+                <Text style={styles.introTitle}>先加入一組單字</Text>
+                <Text style={styles.taskBody}>手動輸入或交給 AI 整理，儲存後就能開始練習。</Text>
+              </View>
+              <Illustration size={104} />
+            </Card>
+            <View style={styles.steps}>
+              {STEPS.map((step, index) => (
+                <Animated.View key={step.title} entering={swapIn} style={styles.step}>
+                  <View style={styles.stepMark}>
+                    <Text style={styles.stepNumber}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.stepText}>
+                    <Text style={styles.stepTitle}>{step.title}</Text>
+                    <Text style={styles.taskBody}>{step.body}</Text>
+                  </View>
+                </Animated.View>
+              ))}
+            </View>
+          </>
         )}
-      </Animated.View>
+      </View>
     </Screen>
   );
 }

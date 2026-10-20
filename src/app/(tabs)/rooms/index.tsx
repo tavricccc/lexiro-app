@@ -1,19 +1,16 @@
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
+import { useActiveRoom } from "@/components/rooms/use-active-room";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { glide } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
-import {
-  fetchActiveRoom,
-  normalizeRoomCode,
-  ROOM_CODE_PATTERN,
-} from "@/core/lib/room-client";
+import { normalizeRoomCode, ROOM_CODE_PATTERN } from "@/core/lib/room-client";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, radius, type } from "@/lib/theme";
@@ -23,25 +20,8 @@ export default function RoomsScreen() {
   const user = useCloudStore((store) => store.user);
   const libraryStatus = useLibraryStore((store) => store.status);
   const [code, setCode] = useState("");
-  const [active, setActive] = useState<{ code: string; title: string } | null>(
-    null,
-  );
-
   // A room this person is hosting on another device can be taken over here.
-  useFocusEffect(
-    useCallback(() => {
-      if (!user) return;
-      let cancelled = false;
-      fetchActiveRoom()
-        .then(({ room }) => {
-          if (!cancelled) setActive(room);
-        })
-        .catch(() => {});
-      return () => {
-        cancelled = true;
-      };
-    }, [user]),
-  );
+  const active = useActiveRoom();
 
   if (!user) return <SignInPrompt body={t("rooms.signInRequired")} />;
 
