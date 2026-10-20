@@ -8,14 +8,23 @@ import { playerName } from "@/components/rooms/player-list";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
-import { ListGroup, PickerRow, SwitchRow } from "@/components/ui/list";
+import {
+  ListGroup,
+  MultiPickerRow,
+  PickerRow,
+  SwitchRow,
+} from "@/components/ui/list";
 import { isWordTask } from "@/core/components/practice/meaning-questions";
 import {
   buildPracticeQueue,
   countQuestionAvailability,
   countTaskAvailability,
 } from "@/core/components/practice/practice-queue";
-import { usePracticePool } from "@/core/components/practice/use-practice-pool";
+import {
+  liveSetIds,
+  practiceScopeLabel,
+  usePracticePool,
+} from "@/core/components/practice/use-practice-pool";
 import { PRACTICE_QUESTION_TASKS } from "@/core/constants";
 import { t } from "@/core/lib/i18n";
 import {
@@ -100,7 +109,11 @@ export default function RoomSetupScreen() {
 function RoomSetup() {
   const user = useCloudStore((store) => store.user);
   const state = useLibraryStore((store) => store.state);
-  const [setId, setSetId] = useState("");
+  const [chosenSetIds, setSetIds] = useState<string[]>([]);
+  const setIds = useMemo(
+    () => liveSetIds(state.sets, chosenSetIds),
+    [chosenSetIds, state.sets],
+  );
   const [difficulty, setDifficulty] =
     useState<WorkspaceQuestionDifficulty>("all");
   const [oneSensePerWord, setOneSensePerWord] = useState(true);
@@ -110,7 +123,7 @@ function RoomSetup() {
 
   const { allowedSenseIds, studyItems, questionGroups } = usePracticePool(
     state,
-    setId,
+    setIds,
   );
   const counts = useMemo(
     () =>
@@ -185,9 +198,7 @@ function RoomSetup() {
     try {
       const { code } = await createRoom({
         name: playerName(user),
-        title:
-          state.sets.find((entry) => entry.id === setId)?.setName ??
-          t("practice.allSets"),
+        title: practiceScopeLabel(state.sets, setIds),
         seconds,
         questions: toRoomQuestions(queue),
       });
@@ -210,18 +221,17 @@ function RoomSetup() {
       ) : (
         <>
           <ListGroup>
-            <PickerRow
-              title={t("practice.scopeHeader")}
+            <MultiPickerRow
+              title={t("practice.set")}
               icon="books.vertical"
-              value={setId}
-              options={[
-                { value: "", label: t("practice.allSets") },
-                ...state.sets.map((entry) => ({
-                  value: entry.id,
-                  label: entry.setName,
-                })),
-              ]}
-              onChange={setSetId}
+              allLabel={t("practice.allSets")}
+              summary={practiceScopeLabel(state.sets, setIds)}
+              value={setIds}
+              options={state.sets.map((entry) => ({
+                value: entry.id,
+                label: entry.setName,
+              }))}
+              onChange={setSetIds}
             />
             {hasExam ? (
               <PickerRow

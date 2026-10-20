@@ -7,7 +7,7 @@ import type {
 
 /** What the setup screen chose; a new round is dealt from the same choices. */
 export interface PracticeChoices {
-  setId: string;
+  setIds: string[];
   tasks: PracticeTask[];
   amount: number;
   difficulty: WorkspaceQuestionDifficulty;

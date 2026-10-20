@@ -126,7 +126,7 @@ function NewRoundButton({
   const state = useLibraryStore((store) => store.state);
   const { allowedSenseIds, studyItems, questionGroups } = usePracticePool(
     state,
-    choices.setId,
+    choices.setIds,
   );
   return (
     <Button

@@ -11,8 +11,8 @@ import { ResumeChoice } from "@/components/resume-choice";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
 import {
-  CheckRow,
   ListGroup,
+  MultiPickerRow,
   PickerRow,
   SwitchRow,
 } from "@/components/ui/list";
@@ -29,7 +29,11 @@ import {
   useRestorePracticeSession,
   type PracticeRestoreIssue,
 } from "@/core/components/practice/use-practice-persistence";
-import { usePracticePool } from "@/core/components/practice/use-practice-pool";
+import {
+  liveSetIds,
+  practiceScopeLabel,
+  usePracticePool,
+} from "@/core/components/practice/use-practice-pool";
 import { usePracticeSetupChoices } from "@/core/components/practice/use-practice-setup-choices";
 import { PRACTICE_TASKS } from "@/core/constants";
 import { t } from "@/core/lib/i18n";
@@ -43,7 +47,6 @@ import type {
   PracticeTask,
   WorkspaceQuestionDifficulty,
 } from "@/core/types";
-import { senseCount } from "@/lexiro/library";
 import {
   BRAND_DARK,
   BRAND_LIGHT,
@@ -83,7 +86,11 @@ function PracticeSetup() {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const setup = usePracticeSetupChoices(initialSet);
-  const { amount, difficulty, oneSensePerWord, setId, tasks } = setup;
+  const { amount, difficulty, oneSensePerWord, tasks } = setup;
+  const setIds = useMemo(
+    () => liveSetIds(state.sets, setup.setIds),
+    [setup.setIds, state.sets],
+  );
   // Opened from a set, practice stays in that set; only the tab offers a choice.
   const fixedSet = initialSet
     ? state.sets.find((set) => set.id === initialSet)
@@ -95,7 +102,7 @@ function PracticeSetup() {
     allStudyItems,
     questionGroups,
     allQuestionItems,
-  } = usePracticePool(state, setId);
+  } = usePracticePool(state, setIds);
   const counts = useMemo(
     () =>
       countTaskAvailability({
@@ -193,7 +200,7 @@ function PracticeSetup() {
           const { snapshot, entries } = pendingSession;
           handOffRun({
             choices: {
-              setId: snapshot.setId,
+              setIds: snapshot.setIds,
               tasks: snapshot.tasks,
               amount: snapshot.amount,
               difficulty: snapshot.difficulty,
@@ -262,7 +269,7 @@ function PracticeSetup() {
   };
   const start = () => {
     const choices = {
-      setId,
+      setIds,
       tasks: activeTasks,
       amount: shownAmount,
       difficulty,
@@ -295,6 +302,22 @@ function PracticeSetup() {
           />
         ) : (
           <>
+            {fixedSet ? null : (
+              <ListGroup title={t("practice.scopeHeader")}>
+                <MultiPickerRow
+                  title={t("practice.set")}
+                  icon="books.vertical"
+                  allLabel={t("practice.allSets")}
+                  summary={practiceScopeLabel(state.sets, setIds)}
+                  value={setIds}
+                  options={sets.map((set) => ({
+                    value: set.id,
+                    label: set.setName,
+                  }))}
+                  onChange={setup.changeSets}
+                />
+              </ListGroup>
+            )}
             {groups.map((group) => (
               <ListGroup
                 key={group.title}
@@ -395,27 +418,6 @@ function PracticeSetup() {
               ) : null}
             </View>
 
-            {fixedSet ? null : (
-              <ListGroup title={t("practice.scopeHeader")}>
-                <CheckRow
-                  title={t("practice.allSets")}
-                  icon="books.vertical"
-                  subtitle={`${sets.length} 個單字集`}
-                  checked={setId === ""}
-                  onPress={() => setup.changeSet("")}
-                />
-                {sets.map((set) => (
-                  <CheckRow
-                    key={set.id}
-                    icon="rectangle.stack"
-                    title={set.setName}
-                    subtitle={`${senseCount(state, set.id)} 個詞義`}
-                    checked={setId === set.id}
-                    onPress={() => setup.changeSet(set.id)}
-                  />
-                ))}
-              </ListGroup>
-            )}
           </>
         )}
       </Screen>

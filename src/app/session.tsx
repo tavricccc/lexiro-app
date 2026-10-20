@@ -143,7 +143,7 @@ function Session({ run }: { run: PracticeRun }) {
     retrying,
     revealed,
     selected,
-    setId: choices.setId,
+    setIds: choices.setIds,
     skipped,
     started: true,
     tasks: choices.tasks,
