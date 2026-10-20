@@ -86,7 +86,8 @@ export type WorkspaceQuestionDifficulty = "all" | "1" | "2" | "3";
 export interface PracticeSessionSnapshot {
   schemaVersion: 5;
   tasks: PracticeTask[];
-  setId: string;
+  /** The sets the queue was drawn from; empty means the whole library. */
+  setIds: string[];
   amount: number;
   index: number;
   correct: number;

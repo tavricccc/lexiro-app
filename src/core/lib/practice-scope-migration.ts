@@ -17,11 +17,13 @@ export function migratePracticeScope(
   library: LibraryState,
 ): { snapshot: PracticeSessionSnapshot; changed: boolean } | null {
   const sets = library.sets
-    .filter((set) => !snapshot.setId || set.id === snapshot.setId)
+    .filter(
+      (set) => !snapshot.setIds.length || snapshot.setIds.includes(set.id),
+    )
     .toSorted((left, right) =>
       left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
     );
-  if (snapshot.setId && !sets.length) return null;
+  if (snapshot.setIds.length && !sets.length) return null;
   const scopes = sets.map((set) => {
     const memberships = library.memberships[set.id] ?? [];
     const senses = new Map<string, SenseId>();
