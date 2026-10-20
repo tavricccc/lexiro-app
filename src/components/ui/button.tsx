@@ -12,8 +12,19 @@ import {
 import { colors } from "@/lib/theme";
 import { PressableScale } from "./pressable-scale";
 
-/** `ink` and `onField` sit on the orange field and look the same in both modes. */
-type Variant = "primary" | "secondary" | "ghost" | "destructive" | "ink" | "onField";
+/**
+ * `ink` and `onField` sit on the orange field, and `field` is the orange
+ * itself for the one action that starts a round; all three look the same in
+ * both modes.
+ */
+type Variant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "destructive"
+  | "ink"
+  | "onField"
+  | "field";
 
 const fills: Record<Variant, { background: ColorValue; text: ColorValue }> = {
   primary: { background: colors.primary, text: colors.primaryForeground },
@@ -22,6 +33,7 @@ const fills: Record<Variant, { background: ColorValue; text: ColorValue }> = {
   destructive: { background: colors.destructiveSoft, text: colors.destructive },
   ink: { background: colors.fieldInk, text: colors.field },
   onField: { background: "rgba(11,15,20,0.12)", text: colors.fieldInk },
+  field: { background: colors.field, text: colors.fieldInk },
 };
 
 /** The web app's pill: one flat fill, 50pt tall, no shadow. */
@@ -50,7 +62,7 @@ export function Button({
       accessibilityState={{ disabled: !!inactive, busy: !!busy }}
       disabled={inactive}
       onPress={() => {
-        if (variant === "primary" || variant === "ink") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (variant === "primary" || variant === "ink" || variant === "field") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.();
       }}
       style={[
@@ -82,6 +94,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   content: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  label: { fontSize: 17, fontWeight: "600" },
+  label: { fontSize: 17, fontWeight: "700" },
   disabled: { opacity: 0.4 },
 });

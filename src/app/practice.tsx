@@ -432,8 +432,10 @@ function PracticeSetup() {
               : t("practice.noSelection")
           }
           icon="play.fill"
+          variant="field"
           disabled={!activeTasks.length || !queueLength}
           onPress={start}
+          style={styles.start}
         />
       </View>
     </View>
@@ -465,11 +467,13 @@ const styles = StyleSheet.create({
   },
   customValue: {
     ...type.title,
+    fontSize: 32,
     color: colors.foreground,
     textAlign: "center",
     fontVariant: ["tabular-nums"],
   },
   customRange: { flexDirection: "row", justifyContent: "space-between" },
+  start: { minHeight: 60 },
   // The start action stays at the bottom while the scope list scrolls.
   dock: {
     position: "absolute",

@@ -24,7 +24,7 @@ export function ResumeChoice({
         <SymbolView
           name={invalid ? "exclamationmark.triangle" : "clock.arrow.circlepath"}
           size={30}
-          tintColor={colors.brand}
+          tintColor={colors.fieldInk}
         />
       </Animated.View>
       <Animated.View style={styles.text}>
@@ -47,12 +47,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "center", gap: 20, padding: 24, backgroundColor: colors.canvas },
   mark: {
     alignSelf: "center",
-    width: 64,
+    // The bubble, filled in orange.
+    width: 96,
     height: 64,
-    borderRadius: 32,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.field,
   },
   text: { gap: 8 },
   title: { ...type.title, color: colors.foreground, textAlign: "center" },

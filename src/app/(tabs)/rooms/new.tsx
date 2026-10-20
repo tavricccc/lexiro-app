@@ -298,9 +298,11 @@ function RoomSetup() {
                 : t("rooms.open", { count: queue.length })
             }
             icon="person.2.fill"
+            variant="field"
             busy={busy}
             disabled={!tasks.length || !queue.length}
             onPress={() => void open()}
+            style={styles.open}
           />
         </>
       )}
@@ -309,6 +311,7 @@ function RoomSetup() {
 }
 
 const styles = StyleSheet.create({
+  open: { minHeight: 60 },
   amount: {
     gap: 6,
     paddingVertical: 14,
