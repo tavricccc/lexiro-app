@@ -1,13 +1,18 @@
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
-import { PlatformColor, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 
-import { GroupedSection } from "@/components/grouped";
+import { Button } from "@/components/ui/button";
+import { Card, EmptyState, Screen } from "@/components/ui/layout";
+import { ListGroup } from "@/components/ui/list";
+import { glide, rise } from "@/components/ui/motion";
+import { PressableScale } from "@/components/ui/pressable-scale";
 import { senseCount, setWords } from "@/lexiro/library";
 import { speak } from "@/lib/speech";
 import { useApp } from "@/lib/store";
-import { brand } from "@/lib/theme";
+import { colors, space, type } from "@/lib/theme";
 
 export default function SetScreen() {
   const { setId } = useLocalSearchParams<{ setId: string }>();
@@ -28,68 +33,103 @@ export default function SetScreen() {
   return (
     <>
       <Stack.Screen options={{ title: set?.setName ?? "" }} />
-      <Stack.SearchBar placeholder="搜尋單字或中文" onChangeText={(event) => setQuery(event.nativeEvent.text)} />
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button
-          icon="play.fill"
-          onPress={() => router.push({ pathname: "/session", params: { setId, tasks: "meaning" } })}
-        >
-          練習
-        </Stack.Toolbar.Button>
-      </Stack.Toolbar>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        <Text style={styles.summary}>{senseCount(library, setId)} 個詞義</Text>
-        <GroupedSection>
-          {visible.map((entry, index) => (
-            <View
-              key={entry.wordKey}
-              style={[styles.word, index < visible.length - 1 && styles.separator]}
-            >
-              <View style={styles.wordBody}>
-                <Text style={styles.spelling}>{entry.word}</Text>
-                {entry.senses.map((sense) => (
-                  <Text key={sense.id} style={styles.sense}>
-                    {sense.pos ? <Text style={styles.pos}>{sense.pos} </Text> : null}
-                    {sense.meaningZh}
-                  </Text>
-                ))}
-              </View>
-              <Pressable
-                accessibilityLabel={`播放 ${entry.word} 的讀音`}
-                hitSlop={10}
-                onPress={() => speak(entry.word)}
-              >
-                <SymbolView name="speaker.wave.2.fill" size={20} tintColor={brand} />
-              </Pressable>
+      <Stack.SearchBar
+        placeholder="搜尋單字或中文"
+        onChangeText={(event) => setQuery(event.nativeEvent.text)}
+      />
+      <Screen>
+        <Animated.View entering={rise(0)}>
+          <Card style={styles.summary}>
+            <View style={styles.summaryText}>
+              <Text style={styles.count}>{senseCount(library, setId)}</Text>
+              <Text style={styles.countLabel}>
+                {needle
+                  ? `個詞義，符合 ${visible.length} / ${words.length} 個單字`
+                  : `個詞義，${words.length} 個單字`}
+              </Text>
             </View>
-          ))}
-        </GroupedSection>
-      </ScrollView>
+            <Button
+              label="練習"
+              icon="play.fill"
+              disabled={!words.length}
+              onPress={() => router.push({ pathname: "/practice", params: { setId } })}
+            />
+          </Card>
+        </Animated.View>
+
+        {visible.length ? (
+          <Animated.View entering={rise(1)} layout={glide}>
+            <ListGroup iconInset={false}>
+              {visible.map((entry) => (
+                <View key={entry.wordKey} style={styles.word}>
+                  <View style={styles.wordBody}>
+                    <Text style={styles.spelling}>{entry.word}</Text>
+                    {entry.senses.map((sense) => (
+                      <View key={sense.id} style={styles.sense}>
+                        <Text style={styles.meaning}>
+                          {sense.pos ? <Text style={styles.pos}>{sense.pos} </Text> : null}
+                          {sense.meaningZh}
+                        </Text>
+                        {sense.examples[0] ? (
+                          <Text style={styles.example} numberOfLines={2}>
+                            {sense.examples[0]}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                  <PressableScale
+                    scaleTo={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={`播放 ${entry.word} 的讀音`}
+                    hitSlop={10}
+                    onPress={() => speak(entry.word)}
+                    style={styles.speak}
+                  >
+                    <SymbolView name="speaker.wave.2.fill" size={17} tintColor={colors.brand} />
+                  </PressableScale>
+                </View>
+              ))}
+            </ListGroup>
+          </Animated.View>
+        ) : (
+          <EmptyState
+            illustrated={!needle}
+            title={needle ? "找不到單字" : "這一集還沒有單字"}
+            body={
+              needle ? `沒有符合「${query}」的英文或中文。` : "在網頁版加入單字後會同步到這裡。"
+            }
+          />
+        )}
+      </Screen>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 40 },
-  summary: {
-    color: PlatformColor("secondaryLabel"),
-    fontSize: 15,
-    marginHorizontal: 32,
-    marginTop: 8,
-  },
+  summary: { flexDirection: "row", alignItems: "center", gap: 16 },
+  summaryText: { flex: 1, gap: 2 },
+  count: { ...type.display, color: colors.foreground, fontVariant: ["tabular-nums"] },
+  countLabel: { ...type.hint, color: colors.muted },
   word: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 13,
+    paddingHorizontal: space.row,
   },
-  separator: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: PlatformColor("separator"),
+  wordBody: { flex: 1, gap: 4 },
+  spelling: { fontSize: 19, fontWeight: "600", color: colors.foreground },
+  sense: { gap: 1 },
+  meaning: { ...type.body, color: colors.foreground },
+  pos: { color: colors.brand, fontStyle: "italic" },
+  example: { ...type.hint, color: colors.muted },
+  speak: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.brandSoft,
   },
-  wordBody: { flex: 1, gap: 3 },
-  spelling: { color: PlatformColor("label"), fontSize: 19, fontWeight: "600" },
-  sense: { color: PlatformColor("secondaryLabel"), fontSize: 15 },
-  pos: { fontStyle: "italic" },
 });

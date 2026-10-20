@@ -1,7 +1,11 @@
-import { Button, Form, Host, LabeledContent, Section, Text } from "@expo/ui/swift-ui";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
 import { useSignIn } from "@/components/sign-in-prompt";
+import { Button } from "@/components/ui/button";
+import { Card, Screen } from "@/components/ui/layout";
+import { ListGroup, ListRow } from "@/components/ui/list";
 import { useApp } from "@/lib/store";
+import { colors, type } from "@/lib/theme";
 
 function syncLabel(status: string, syncedAt: number | null): string {
   if (status === "syncing") return "同步中…";
@@ -24,39 +28,83 @@ export default function AccountScreen() {
   const signOut = useApp((state) => state.signOut);
   const { busy, signIn } = useSignIn();
 
+  const name = user?.displayName || user?.email || "本機使用者";
+  const confirmSignOut = () =>
+    Alert.alert("登出 Lexiro？", "這台裝置上的單字快取會保留，再次登入同一個帳號時沿用。", [
+      { text: "取消", style: "cancel" },
+      { text: "登出", style: "destructive", onPress: () => void signOut() },
+    ]);
+
   return (
-    <Host style={{ flex: 1 }}>
-      <Form>
-        {user ? (
-          <>
-            <Section title="帳號">
-              <LabeledContent label="Google">
-                <Text>{user.email ?? ""}</Text>
-              </LabeledContent>
-            </Section>
-            <Section title="雲端同步">
-              <LabeledContent label="上次同步">
-                <Text>{syncLabel(status, syncedAt)}</Text>
-              </LabeledContent>
-              <LabeledContent label="單字集">
-                <Text>{String(library.sets.length)}</Text>
-              </LabeledContent>
-              <Button label="立即同步" systemImage="arrow.triangle.2.circlepath" onPress={() => void sync()} />
-            </Section>
-            <Section>
-              <Button label="登出" role="destructive" onPress={() => void signOut()} />
-            </Section>
-          </>
-        ) : (
-          <Section title="帳號">
-            <Button
-              label={busy ? "登入中…" : "用 Google 登入"}
-              systemImage="person.crop.circle"
-              onPress={() => void signIn()}
+    <Screen>
+      <Card style={styles.account}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{name.slice(0, 1).toUpperCase()}</Text>
+        </View>
+        <View style={styles.accountText}>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={styles.email} numberOfLines={1}>
+            {user ? (user.email ?? "") : "登入後在每台裝置同步單字集"}
+          </Text>
+        </View>
+      </Card>
+
+      {user ? (
+        <>
+          <ListGroup title="雲端同步">
+            <ListRow
+              title="上次同步"
+              icon="clock"
+              detail={syncLabel(status, syncedAt)}
+              accessory={status === "syncing" ? <ActivityIndicator /> : undefined}
             />
-          </Section>
-        )}
-      </Form>
-    </Host>
+            <ListRow title="單字集" icon="rectangle.stack" detail={String(library.sets.length)} />
+            <ListRow
+              title="題目"
+              icon="list.bullet.rectangle"
+              detail={String(library.questions.length)}
+            />
+            <ListRow
+              title="立即同步"
+              icon="arrow.triangle.2.circlepath"
+              onPress={status === "syncing" ? undefined : () => void sync()}
+            />
+          </ListGroup>
+          <ListGroup>
+            <ListRow
+              title="登出"
+              icon="rectangle.portrait.and.arrow.right"
+              destructive
+              onPress={confirmSignOut}
+            />
+          </ListGroup>
+        </>
+      ) : (
+        <Button
+          label={busy ? "登入中…" : "使用 Google 登入"}
+          icon="arrow.right.circle"
+          busy={busy}
+          onPress={() => void signIn()}
+        />
+      )}
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  account: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.brandSoft,
+  },
+  avatarText: { fontSize: 22, fontWeight: "700", color: colors.brand },
+  accountText: { flex: 1, gap: 2 },
+  name: { ...type.section, color: colors.foreground },
+  email: { ...type.hint, color: colors.muted },
+});
