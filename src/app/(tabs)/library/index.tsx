@@ -1,8 +1,8 @@
 import { router, Stack } from "expo-router";
 import { useMemo, useState } from "react";
-import { RefreshControl } from "react-native";
 import Animated from "react-native-reanimated";
 
+import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { glide, rise } from "@/components/ui/motion";
@@ -15,7 +15,6 @@ const UNCATEGORIZED = "uncategorized";
 export default function LibraryScreen() {
   const library = useLibraryStore((store) => store.state);
   const status = useCloudStore((state) => state.status);
-  const sync = useCloudStore((state) => state.sync);
   const [query, setQuery] = useState("");
 
   // Folders in their saved order, then sets the folders do not claim.
@@ -50,9 +49,7 @@ export default function LibraryScreen() {
         onChangeText={(event) => setQuery(event.nativeEvent.text)}
       />
       <Screen
-        refreshControl={
-          <RefreshControl refreshing={status === "syncing"} onRefresh={() => void sync()} />
-        }
+        refreshControl={<SyncRefreshControl />}
       >
         {sections.map((section, index) => (
           <Animated.View key={section.id} entering={rise(index)} layout={glide}>

@@ -1,15 +1,15 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { RefreshControl, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
+import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Illustration, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { rise } from "@/components/ui/motion";
 import { Segmented } from "@/components/ui/segmented";
 import { senseCount } from "@/lexiro/library";
-import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, type } from "@/lib/theme";
 
@@ -33,8 +33,6 @@ const openSet = (setId: string) => router.push({ pathname: "/library/[setId]", p
 
 export default function TodayScreen() {
   const library = useLibraryStore((store) => store.state);
-  const status = useCloudStore((state) => state.status);
-  const sync = useCloudStore((state) => state.sync);
   const [tab, setTab] = useState<Tab>("tasks");
 
   const recent = useMemo(
@@ -54,9 +52,7 @@ export default function TodayScreen() {
 
   return (
     <Screen
-      refreshControl={
-        <RefreshControl refreshing={status === "syncing"} onRefresh={() => void sync()} />
-      }
+      refreshControl={<SyncRefreshControl />}
     >
       <Segmented options={TABS} value={tab} onChange={setTab} />
 
