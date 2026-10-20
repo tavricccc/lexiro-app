@@ -1,22 +1,47 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { useColorScheme } from "react-native";
+// Browser globals for the shared web code; must load before anything from src/core.
+import { hydrateLocalStorage } from "@/platform/install";
 
-import { useApp } from "@/lib/store";
-import { BRAND_DARK, BRAND_LIGHT } from "@/lib/theme";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { reloadAppAsync } from "expo";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
+import { StyleSheet, useColorScheme, View } from "react-native";
+import Animated, { FadeOut } from "react-native-reanimated";
+
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/layout";
+import { SignInPrompt } from "@/components/sign-in-prompt";
+import { ToastHost } from "@/components/toast-host";
+import { useCloudStore } from "@/core/stores/cloud-store";
+import { BRAND_DARK, BRAND_LIGHT, colors } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync();
 
+// Same key as the web's CloudGate: the visitor chose to stay on this device.
+const LOCAL_ONLY_KEY = "lexiro:local-only";
+
 export default function RootLayout() {
   const scheme = useColorScheme();
-  const ready = useApp((state) => state.ready);
-  const start = useApp((state) => state.start);
+  const ready = useCloudStore((state) => state.ready);
+  const configured = useCloudStore((state) => state.configured);
+  const user = useCloudStore((state) => state.user);
+  const error = useCloudStore((state) => state.error);
+  const [localOnly, setLocalOnly] = useState<boolean | null>(null);
 
-  useEffect(() => start(), [start]);
   useEffect(() => {
-    if (ready) void SplashScreen.hideAsync();
-  }, [ready]);
+    void hydrateLocalStorage().then(() => {
+      setLocalOnly(localStorage.getItem(LOCAL_ONLY_KEY) === "1");
+      return useCloudStore.getState().initialize();
+    });
+  }, []);
+  // Only a startup that never loaded the local library stops here.
+  const failed = !ready && Boolean(error);
+  // The local library is shown at once; sync catches up underneath.
+  useEffect(() => {
+    if ((ready && localOnly !== null) || failed) void SplashScreen.hideAsync();
+  }, [ready, localOnly, failed]);
+
+  const askSignIn = ready && configured && !user && localOnly === false;
 
   const dark = scheme === "dark";
   const base = dark ? DarkTheme : DefaultTheme;
@@ -51,6 +76,31 @@ export default function RootLayout() {
           options={{ presentation: "fullScreenModal", gestureEnabled: false }}
         />
       </Stack>
+      {askSignIn ? (
+        <Animated.View exiting={FadeOut.duration(240)} style={StyleSheet.absoluteFill}>
+          <SignInPrompt
+            onSkip={() => {
+              localStorage.setItem(LOCAL_ONLY_KEY, "1");
+              setLocalOnly(true);
+            }}
+          />
+        </Animated.View>
+      ) : null}
+      {failed ? (
+        <View style={[StyleSheet.absoluteFill, styles.failed]}>
+          <EmptyState
+            illustrated={false}
+            title="無法載入資料"
+            body={error}
+            action={<Button label="重新載入" icon="arrow.clockwise" onPress={() => void reloadAppAsync()} />}
+          />
+        </View>
+      ) : null}
+      <ToastHost />
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  failed: { justifyContent: "center", padding: 16, backgroundColor: colors.canvas },
+});

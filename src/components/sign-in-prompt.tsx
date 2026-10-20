@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/ui/button";
-import { SignInCancelled, signInWithGoogle } from "@/lib/sign-in";
+import { t } from "@/core/lib/i18n";
+import { useCloudStore } from "@/core/stores/cloud-store";
+import { SignInCancelled } from "@/platform/sign-in";
 import { colors, radius, type } from "@/lib/theme";
 
 const icon = require("../../assets/images/icon.png");
@@ -14,7 +16,7 @@ export function useSignIn() {
     if (busy) return;
     setBusy(true);
     try {
-      await signInWithGoogle();
+      await useCloudStore.getState().signIn();
     } catch (reason) {
       if (!(reason instanceof SignInCancelled)) Alert.alert("登入失敗", "請再試一次。");
     } finally {
@@ -24,23 +26,29 @@ export function useSignIn() {
   return { busy, signIn };
 }
 
-/** Shown in place of a tab that needs the cloud library, worded as on the web app. */
-export function SignInPrompt({ body }: { body?: string }) {
+/** The web app's sign-in card: in place of a tab that needs an account, or at startup. */
+export function SignInPrompt({ body, onSkip }: { body?: string; onSkip?: () => void }) {
   const { busy, signIn } = useSignIn();
   return (
     <View style={styles.root}>
       <Image source={icon} style={styles.icon} accessible={false} />
-      <Text style={styles.title}>登入 Lexiro</Text>
-      <Text style={styles.body}>
-        {body ?? "登入後單字集和練習進度會在每台裝置同步，也能分享單字集、和朋友開房對戰。"}
-      </Text>
+      <Text style={styles.title}>{t("startup.signInTitle")}</Text>
+      <Text style={styles.body}>{body ?? t("startup.signInBody")}</Text>
       <Button
-        label={busy ? "登入中…" : "使用 Google 登入"}
+        label={busy ? "登入中…" : t("settings.signIn")}
         icon="arrow.right.circle"
         busy={busy}
         onPress={() => void signIn()}
         style={styles.button}
       />
+      {onSkip ? (
+        <Button
+          label={t("startup.localOnly")}
+          variant="ghost"
+          onPress={onSkip}
+          style={styles.button}
+        />
+      ) : null}
     </View>
   );
 }
