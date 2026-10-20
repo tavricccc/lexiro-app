@@ -1,4 +1,8 @@
-import { buildFolderOptions, collectFolderIds, UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
+import {
+  buildFolderOptions,
+  collectFolderIds,
+  UNCATEGORIZED_FOLDER_ID,
+} from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
 import type { VocabFolder } from "@/core/types";
 
@@ -21,7 +25,10 @@ export function folderParentOptions(folders: VocabFolder[], folderId: string) {
   return [
     { label: t("library.rootFolder"), value: ROOT_FOLDER },
     ...buildFolderOptions(folders)
-      .filter((folder) => folder.id !== UNCATEGORIZED_FOLDER_ID && !own.has(folder.id))
+      .filter(
+        (folder) =>
+          folder.id !== UNCATEGORIZED_FOLDER_ID && !own.has(folder.id),
+      )
       .map((folder) => ({ label: folder.label, value: folder.id })),
   ];
 }

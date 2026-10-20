@@ -19,16 +19,26 @@ import { colors, type } from "@/lib/theme";
 /** 名稱與資料夾: renames a set or files it elsewhere. */
 export default function SetSettingsScreen() {
   const { setId } = useLocalSearchParams<{ setId: string }>();
-  const current = useLibraryStore((store) => store.state.sets.find((entry) => entry.id === setId));
+  const current = useLibraryStore((store) =>
+    store.state.sets.find((entry) => entry.id === setId),
+  );
   if (!current) {
-    return <SheetHeader title={t("wordEdit.metadata")} onCancel={() => router.back()} />;
+    return (
+      <SheetHeader
+        title={t("wordEdit.metadata")}
+        onCancel={() => router.back()}
+      />
+    );
   }
   return (
     <SettingsFlow
       key={`${setId}:${current.updatedAt}`}
       setId={setId}
       revision={current.updatedAt}
-      initial={{ name: current.setName, folder: current.folderId || UNCATEGORIZED_FOLDER_ID }}
+      initial={{
+        name: current.setName,
+        folder: current.folderId || UNCATEGORIZED_FOLDER_ID,
+      }}
     />
   );
 }
@@ -60,7 +70,9 @@ function SettingsFlow({
         <ResumeChoice
           invalid={saved.status === "invalid"}
           description={t(
-            saved.status === "invalid" ? "draft.invalidDescription" : "draft.setMetadataDescription",
+            saved.status === "invalid"
+              ? "draft.invalidDescription"
+              : "draft.setMetadataDescription",
           )}
           onResume={saved.resume}
           onRestart={saved.restart}

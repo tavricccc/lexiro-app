@@ -3,7 +3,10 @@ import { useState } from "react";
 import { Alert } from "react-native";
 
 import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
-import { WordFields, wordDraftIncomplete } from "@/components/library/word-fields";
+import {
+  WordFields,
+  wordDraftIncomplete,
+} from "@/components/library/word-fields";
 import { ResumeChoice } from "@/components/resume-choice";
 import { EmptyState } from "@/components/ui/layout";
 import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
@@ -14,17 +17,27 @@ import { useLibraryStore } from "@/core/stores/library-store";
 import type { WordDraft, WordKey } from "@/core/types";
 
 export default function EditWordScreen() {
-  const { setId, wordKey } = useLocalSearchParams<{ setId: string; wordKey: string }>();
+  const { setId, wordKey } = useLocalSearchParams<{
+    setId: string;
+    wordKey: string;
+  }>();
   const state = useLibraryStore((store) => store.state);
   const key = wordKey as WordKey;
   const word = state.words[key];
-  const membership = (state.memberships[setId] ?? []).find((entry) => entry.wordKey === key);
-  const senses = word?.senses.filter((sense) => membership?.senseIds.includes(sense.id));
+  const membership = (state.memberships[setId] ?? []).find(
+    (entry) => entry.wordKey === key,
+  );
+  const senses = word?.senses.filter((sense) =>
+    membership?.senseIds.includes(sense.id),
+  );
 
   if (!word || !membership || !senses?.length)
     return (
       <FormScreen>
-        <SheetHeader title={t("setDetail.editWord")} onCancel={() => router.back()} />
+        <SheetHeader
+          title={t("setDetail.editWord")}
+          onCancel={() => router.back()}
+        />
         <EmptyState
           illustrated={false}
           title={t("setDetail.missingWord")}
@@ -77,11 +90,16 @@ function EditWordFlow({
   if (saved.status === "offer" || saved.status === "invalid")
     return (
       <>
-        <SheetHeader title={t("setDetail.editWord")} onCancel={() => router.back()} />
+        <SheetHeader
+          title={t("setDetail.editWord")}
+          onCancel={() => router.back()}
+        />
         <ResumeChoice
           invalid={saved.status === "invalid"}
           description={t(
-            saved.status === "invalid" ? "draft.invalidDescription" : "draft.wordEditDescription",
+            saved.status === "invalid"
+              ? "draft.invalidDescription"
+              : "draft.wordEditDescription",
           )}
           onResume={saved.resume}
           onRestart={saved.restart}
@@ -95,7 +113,9 @@ function EditWordFlow({
     setBusy(true);
     try {
       const store = useLibraryStore.getState();
-      await store.saveSet(prepareWordEdit(store.state, setId, wordKey, saved.draft));
+      await store.saveSet(
+        prepareWordEdit(store.state, setId, wordKey, saved.draft),
+      );
       saved.clear();
       router.back();
     } catch {

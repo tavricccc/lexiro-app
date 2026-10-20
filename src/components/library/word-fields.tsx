@@ -1,7 +1,12 @@
 import { StyleSheet, Text } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
-import { ActionRow, InputRow, ListGroup, TextBlockRow } from "@/components/ui/list";
+import {
+  ActionRow,
+  InputRow,
+  ListGroup,
+  TextBlockRow,
+} from "@/components/ui/list";
 import { glide, swapIn } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { randomUUID } from "@/core/lib/id";
@@ -18,7 +23,10 @@ export const emptySense = (): SenseDraft => ({
   supplementary: false,
 });
 
-export const emptyWordDraft = (): WordDraft => ({ word: "", senses: [emptySense()] });
+export const emptyWordDraft = (): WordDraft => ({
+  word: "",
+  senses: [emptySense()],
+});
 
 /** The web editor's rule: a headword, at least one sense, each with a POS and meaning. */
 export function wordDraftIncomplete(draft: WordDraft): boolean {
@@ -41,16 +49,25 @@ export function ExampleRows({
 }) {
   return [
     ...values.map((example, index) => (
-      <Animated.View key={`example-${index}`} entering={FadeIn.duration(200)} exiting={FadeOut.duration(140)} layout={glide}>
+      <Animated.View
+        key={`example-${index}`}
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(140)}
+        layout={glide}
+      >
         <TextBlockRow
           label={t("wordEdit.example", { count: index + 1 })}
           value={example}
           editable={editable}
           placeholder={t("setEditor.examplePlaceholder")}
-          onChangeText={(next) => onChange(values.map((text, i) => (i === index ? next : text)))}
+          onChangeText={(next) =>
+            onChange(values.map((text, i) => (i === index ? next : text)))
+          }
           removeLabel={t("wordEdit.removeExample")}
           onRemove={
-            values.length > 1 ? () => onChange(values.filter((_, i) => i !== index)) : undefined
+            values.length > 1
+              ? () => onChange(values.filter((_, i) => i !== index))
+              : undefined
           }
         />
       </Animated.View>
@@ -82,7 +99,9 @@ export function WordFields({
   const updateSense = (index: number, patch: Partial<SenseDraft>) =>
     onChange({
       ...draft,
-      senses: draft.senses.map((sense, i) => (i === index ? { ...sense, ...patch } : sense)),
+      senses: draft.senses.map((sense, i) =>
+        i === index ? { ...sense, ...patch } : sense,
+      ),
     });
 
   return (
@@ -109,7 +128,9 @@ export function WordFields({
         >
           <ListGroup
             title={t("wordEdit.sense", { count: index + 1 })}
-            footer={sense.supplementary ? t("wordEdit.supplementaryHint") : undefined}
+            footer={
+              sense.supplementary ? t("wordEdit.supplementaryHint") : undefined
+            }
             iconInset={false}
           >
             <InputRow
@@ -139,7 +160,10 @@ export function WordFields({
                 disabled={busy}
                 title={t("wordEdit.removeSense")}
                 onPress={() =>
-                  onChange({ ...draft, senses: draft.senses.filter((_, i) => i !== index) })
+                  onChange({
+                    ...draft,
+                    senses: draft.senses.filter((_, i) => i !== index),
+                  })
                 }
               />
             ) : null}
@@ -152,14 +176,18 @@ export function WordFields({
           <ActionRow
             title={t("wordEdit.addSense")}
             disabled={busy}
-            onPress={() => onChange({ ...draft, senses: [...draft.senses, emptySense()] })}
+            onPress={() =>
+              onChange({ ...draft, senses: [...draft.senses, emptySense()] })
+            }
           />
         </ListGroup>
       </Animated.View>
 
       {submitted && wordDraftIncomplete(draft) ? (
         <Animated.View entering={FadeIn}>
-          <Text style={styles.error}>還有欄位沒填完，紅字標示的欄位需要補齊。</Text>
+          <Text style={styles.error}>
+            還有欄位沒填完，紅字標示的欄位需要補齊。
+          </Text>
         </Animated.View>
       ) : null}
     </>

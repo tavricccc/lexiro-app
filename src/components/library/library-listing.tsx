@@ -3,7 +3,10 @@ import { useMemo, useState } from "react";
 import { Alert } from "react-native";
 import Animated from "react-native-reanimated";
 
-import { folderParentOptions, ROOT_FOLDER } from "@/components/library/folder-options";
+import {
+  folderParentOptions,
+  ROOT_FOLDER,
+} from "@/components/library/folder-options";
 import { parseShareId } from "@/components/library/share-id";
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
@@ -29,7 +32,11 @@ import { toast } from "@/platform/toast";
 
 const NO_METRICS = { questionCount: 0, senseCount: 0 };
 
-function askFolderName(title: string, initial: string, submit: (name: string) => Promise<unknown>) {
+function askFolderName(
+  title: string,
+  initial: string,
+  submit: (name: string) => Promise<unknown>,
+) {
   Alert.prompt(
     title,
     undefined,
@@ -40,7 +47,9 @@ function askFolderName(title: string, initial: string, submit: (name: string) =>
         isPreferred: true,
         onPress: (value?: string) => {
           if (!value?.trim()) return;
-          submit(value).catch(() => Alert.alert(t("library.folderNameConflict")));
+          submit(value).catch(() =>
+            Alert.alert(t("library.folderNameConflict")),
+          );
         },
       },
     ],
@@ -61,7 +70,10 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
   const [importing, setImporting] = useState(false);
 
   const currentFolder = folderId
-    ? state.folders.find((folder) => folder.id === folderId && folder.id !== UNCATEGORIZED_FOLDER_ID)
+    ? state.folders.find(
+        (folder) =>
+          folder.id === folderId && folder.id !== UNCATEGORIZED_FOLDER_ID,
+      )
     : undefined;
   const metrics = useMemo(() => buildLibrarySetMetrics(state), [state]);
   const needle = query.trim().toLocaleLowerCase();
@@ -70,13 +82,17 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
     () =>
       state.folders
         .filter(
-          (folder) => folder.id !== UNCATEGORIZED_FOLDER_ID && folder.parentId === currentFolder?.id,
+          (folder) =>
+            folder.id !== UNCATEGORIZED_FOLDER_ID &&
+            folder.parentId === currentFolder?.id,
         )
         .toSorted((a, b) => a.order - b.order || a.name.localeCompare(b.name)),
     [currentFolder, state.folders],
   );
   const sets = useMemo(() => {
-    const scope = currentFolder ? collectFolderIds(state.folders, currentFolder.id) : null;
+    const scope = currentFolder
+      ? collectFolderIds(state.folders, currentFolder.id)
+      : null;
     return state.sets.filter((entry) => {
       const inLocation = needle
         ? !scope || scope.has(entry.folderId)
@@ -87,15 +103,23 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             entry.folderId === UNCATEGORIZED_FOLDER_ID;
       if (!inLocation) return false;
       if (!needle) return true;
-      return entry.setName.toLocaleLowerCase().includes(needle) || setMatchesQuery(state, entry.id, needle);
+      return (
+        entry.setName.toLocaleLowerCase().includes(needle) ||
+        setMatchesQuery(state, entry.id, needle)
+      );
     });
   }, [currentFolder, needle, state]);
 
   const store = useLibraryStore.getState;
   const createSet = () =>
-    router.push({ pathname: "/sets/new", params: currentFolder ? { folderId: currentFolder.id } : {} });
+    router.push({
+      pathname: "/sets/new",
+      params: currentFolder ? { folderId: currentFolder.id } : {},
+    });
   const createFolder = () =>
-    askFolderName(t("library.newFolder"), "", (name) => store().createFolder(name, currentFolder?.id));
+    askFolderName(t("library.newFolder"), "", (name) =>
+      store().createFolder(name, currentFolder?.id),
+    );
   const importSet = async () => {
     setImporting(true);
     try {
@@ -134,7 +158,10 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
               Alert.alert(t("share.unavailable"));
               return;
             }
-            router.push({ pathname: "/sets/shared/[shareId]", params: { shareId } });
+            router.push({
+              pathname: "/sets/shared/[shareId]",
+              params: { shareId },
+            });
           },
         },
       ],
@@ -143,14 +170,18 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
       "url",
     );
   const folderSets = currentFolder
-    ? state.sets.filter((entry) => collectFolderIds(state.folders, currentFolder.id).has(entry.folderId))
-        .length
+    ? state.sets.filter((entry) =>
+        collectFolderIds(state.folders, currentFolder.id).has(entry.folderId),
+      ).length
     : 0;
   const deleteFolder = () => {
     if (!currentFolder) return;
     Alert.alert(
       t("library.deleteFolder"),
-      t("library.deleteFolderConfirm", { name: currentFolder.name, sets: folderSets }),
+      t("library.deleteFolderConfirm", {
+        name: currentFolder.name,
+        sets: folderSets,
+      }),
       [
         { text: t("common.cancel"), style: "cancel" },
         {
@@ -169,14 +200,19 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
     const here = currentFolder.parentId ?? ROOT_FOLDER;
     showActionSheet({
       title: t("library.moveFolder"),
-      actions: folderParentOptions(state.folders, currentFolder.id).map((option) => ({
-        label: option.label,
-        disabled: option.value === here,
-        onSelect: () =>
-          void store()
-            .moveFolder(currentFolder.id, option.value === ROOT_FOLDER ? undefined : option.value)
-            .catch(() => Alert.alert(t("library.folderNameConflict"))),
-      })),
+      actions: folderParentOptions(state.folders, currentFolder.id).map(
+        (option) => ({
+          label: option.label,
+          disabled: option.value === here,
+          onSelect: () =>
+            void store()
+              .moveFolder(
+                currentFolder.id,
+                option.value === ROOT_FOLDER ? undefined : option.value,
+              )
+              .catch(() => Alert.alert(t("library.folderNameConflict"))),
+        }),
+      ),
     });
   };
 
@@ -185,7 +221,11 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
 
   return (
     <>
-      <Stack.Screen options={{ title: currentFolder?.name ?? (missing ? "" : t("library.title")) }} />
+      <Stack.Screen
+        options={{
+          title: currentFolder?.name ?? (missing ? "" : t("library.title")),
+        }}
+      />
       <Stack.SearchBar
         placeholder={t("library.searchHere")}
         onChangeText={(event) => setQuery(event.nativeEvent.text)}
@@ -193,11 +233,20 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
       />
       {missing ? null : (
         <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Menu icon="plus" accessibilityLabel={t("library.newSet")}>
-            <Stack.Toolbar.MenuAction icon="rectangle.stack.badge.plus" onPress={createSet}>
+          <Stack.Toolbar.Menu
+            icon="plus"
+            accessibilityLabel={t("library.newSet")}
+          >
+            <Stack.Toolbar.MenuAction
+              icon="rectangle.stack.badge.plus"
+              onPress={createSet}
+            >
               {t("setEditor.createTitle")}
             </Stack.Toolbar.MenuAction>
-            <Stack.Toolbar.MenuAction icon="folder.badge.plus" onPress={createFolder}>
+            <Stack.Toolbar.MenuAction
+              icon="folder.badge.plus"
+              onPress={createFolder}
+            >
               {t("library.newFolder")}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction
@@ -212,12 +261,17 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
           {currentFolder ? (
-            <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t("common.more")}>
+            <Stack.Toolbar.Menu
+              icon="ellipsis"
+              accessibilityLabel={t("common.more")}
+            >
               <Stack.Toolbar.MenuAction
                 icon="pencil"
                 onPress={() =>
-                  askFolderName(t("library.renameFolder"), currentFolder.name, (name) =>
-                    store().renameFolder(currentFolder.id, name),
+                  askFolderName(
+                    t("library.renameFolder"),
+                    currentFolder.name,
+                    (name) => store().renameFolder(currentFolder.id, name),
                   )
                 }
               >
@@ -226,7 +280,11 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
               <Stack.Toolbar.MenuAction icon="folder" onPress={moveFolder}>
                 {t("library.moveFolder")}
               </Stack.Toolbar.MenuAction>
-              <Stack.Toolbar.MenuAction icon="trash" destructive onPress={deleteFolder}>
+              <Stack.Toolbar.MenuAction
+                icon="trash"
+                destructive
+                onPress={deleteFolder}
+              >
                 {t("library.deleteFolder")}
               </Stack.Toolbar.MenuAction>
             </Stack.Toolbar.Menu>
@@ -241,7 +299,11 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             body={t("library.migrationError", { message: loadError ?? "" })}
           />
         ) : missing ? (
-          <EmptyState illustrated={false} title={t("library.emptyFolderTitle")} body={t("setDetail.missingDescription")} />
+          <EmptyState
+            illustrated={false}
+            title={t("library.emptyFolderTitle")}
+            body={t("setDetail.missingDescription")}
+          />
         ) : status !== "ready" ? null : !listEmpty ? (
           <Animated.View entering={swapIn} layout={glide}>
             <ListGroup>
@@ -253,16 +315,24 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
                     iconTint={colors.success}
                     title={folder.name}
                     subtitle={t("library.itemCount", {
-                      count: countDirectItems(state.folders, state.sets, folder.id),
+                      count: countDirectItems(
+                        state.folders,
+                        state.sets,
+                        folder.id,
+                      ),
                     })}
                     chevron
                     onPress={() =>
-                      router.push({ pathname: "/library/folder/[folderId]", params: { folderId: folder.id } })
+                      router.push({
+                        pathname: "/library/folder/[folderId]",
+                        params: { folderId: folder.id },
+                      })
                     }
                   />
                 )),
                 ...sets.map((entry) => {
-                  const { senseCount, questionCount } = metrics.get(entry.id) ?? NO_METRICS;
+                  const { senseCount, questionCount } =
+                    metrics.get(entry.id) ?? NO_METRICS;
                   return (
                     <ListRow
                       key={entry.id}
@@ -270,11 +340,20 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
                       title={entry.setName}
                       subtitle={[
                         t("library.senseCount", { count: senseCount }),
-                        ...(questionCount ? [t("library.questionCount", { count: questionCount })] : []),
+                        ...(questionCount
+                          ? [
+                              t("library.questionCount", {
+                                count: questionCount,
+                              }),
+                            ]
+                          : []),
                       ].join(" · ")}
                       chevron
                       onPress={() =>
-                        router.push({ pathname: "/library/[setId]", params: { setId: entry.id } })
+                        router.push({
+                          pathname: "/library/[setId]",
+                          params: { setId: entry.id },
+                        })
                       }
                     />
                   );
@@ -283,12 +362,28 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             </ListGroup>
           </Animated.View>
         ) : needle ? (
-          <EmptyState illustrated={false} title={t("library.noResults")} body={t("library.searchHint")} />
+          <EmptyState
+            illustrated={false}
+            title={t("library.noResults")}
+            body={t("library.searchHint")}
+          />
         ) : (
           <EmptyState
-            title={t(currentFolder ? "library.emptyFolderTitle" : "library.emptyTitle")}
-            body={t(currentFolder ? "library.emptyFolderDescription" : "library.emptyDescription")}
-            action={<Button label={t("setEditor.createTitle")} icon="plus" onPress={createSet} />}
+            title={t(
+              currentFolder ? "library.emptyFolderTitle" : "library.emptyTitle",
+            )}
+            body={t(
+              currentFolder
+                ? "library.emptyFolderDescription"
+                : "library.emptyDescription",
+            )}
+            action={
+              <Button
+                label={t("setEditor.createTitle")}
+                icon="plus"
+                onPress={createSet}
+              />
+            }
           />
         )}
       </Screen>

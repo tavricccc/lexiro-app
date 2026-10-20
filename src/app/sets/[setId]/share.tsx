@@ -36,7 +36,8 @@ export default function ShareLinkScreen() {
         if (!controller.signal.aborted) setLink(found);
       })
       .catch((reason) => {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : String(reason));
+        if (!controller.signal.aborted)
+          setError(reason instanceof Error ? reason.message : String(reason));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -67,7 +68,11 @@ export default function ShareLinkScreen() {
 
   return (
     <FormScreen>
-      <SheetHeader title={t("share.title")} busy={busy} onCancel={() => router.back()} />
+      <SheetHeader
+        title={t("share.title")}
+        busy={busy}
+        onCancel={() => router.back()}
+      />
       <Animated.View entering={swapIn}>
         <Text style={styles.description}>{t("share.description")}</Text>
       </Animated.View>
