@@ -107,6 +107,7 @@ export default function SetScreen() {
     pathname:
       | "/sets/[setId]/add"
       | "/sets/[setId]/generate"
+      | "/sets/[setId]/supplement"
       | "/sets/[setId]/settings"
       | "/sets/[setId]/share",
   ) => router.push({ pathname, params: { setId } });
@@ -486,6 +487,12 @@ export default function SetScreen() {
                 title={t("setEditor.addWord")}
                 chevron
                 onPress={() => openSheet("/sets/[setId]/add")}
+              />
+              <ListRow
+                icon="sparkles"
+                title={t("supplement.title")}
+                chevron
+                onPress={() => openSheet("/sets/[setId]/supplement")}
               />
               <ListRow
                 icon="pencil"
