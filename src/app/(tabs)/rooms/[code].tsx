@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { PlayerList, playerName } from "@/components/rooms/player-list";
 import { QuestionStage } from "@/components/rooms/question-stage";
@@ -11,7 +11,7 @@ import { RoomFinished } from "@/components/rooms/room-finished";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Screen } from "@/components/ui/layout";
-import { swapIn } from "@/components/ui/motion";
+import { swapIn, swapOut } from "@/components/ui/motion";
 import { useRoom, type RoomConnection } from "@/core/components/rooms/use-room";
 import { t } from "@/core/lib/i18n";
 import type { RoomState } from "@/core/lib/room-client";
@@ -129,7 +129,7 @@ function LiveRoom({ code, name }: { code: string; name: string }) {
 function ConnectionNotice({ connection }: { connection: RoomConnection }) {
   if (connection === "open" || connection === "closed") return null;
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.notice}>
+    <Animated.View entering={swapIn} exiting={swapOut} style={styles.notice}>
       <ActivityIndicator size="small" />
       <Text style={styles.noticeText}>
         {connection === "reconnecting"

@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
 import { setFolderOptions } from "@/components/library/folder-options";
@@ -13,7 +13,7 @@ import {
   ListGroup,
   PickerRow,
 } from "@/components/ui/list";
-import { glide, swapIn } from "@/components/ui/motion";
+import { glide, swapIn, swapOut } from "@/components/ui/motion";
 import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
@@ -166,7 +166,7 @@ export default function NewSetScreen() {
           <Animated.View
             key={row.key}
             entering={swapIn}
-            exiting={FadeOut.duration(160)}
+            exiting={swapOut}
             layout={glide}
           >
             <ListGroup
@@ -239,7 +239,7 @@ export default function NewSetScreen() {
       </Animated.View>
 
       {error ? (
-        <Animated.View entering={FadeIn}>
+        <Animated.View entering={swapIn}>
           <Text style={styles.error}>{error}</Text>
         </Animated.View>
       ) : null}

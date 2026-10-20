@@ -1,8 +1,8 @@
 import { router } from "expo-router";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { glide } from "@/components/ui/motion";
+import { glide, swapIn, swapOut } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { colors } from "@/lib/theme";
 import { useActiveRoom } from "./use-active-room";
@@ -17,7 +17,7 @@ export function ActiveRoomCard() {
 
   if (!room) return null;
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut} layout={glide}>
+    <Animated.View entering={swapIn} exiting={swapOut} layout={glide}>
       <ListGroup footer={t("rooms.activeRoomHint")}>
         <ListRow
           icon="person.2.wave.2.fill"

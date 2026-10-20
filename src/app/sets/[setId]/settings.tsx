@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
 import { setFolderOptions } from "@/components/library/folder-options";
@@ -143,7 +143,7 @@ function SettingsFlow({
         </ListGroup>
       </Animated.View>
       {error ? (
-        <Animated.View entering={FadeIn}>
+        <Animated.View entering={swapIn}>
           <Text style={styles.error}>{error}</Text>
         </Animated.View>
       ) : null}

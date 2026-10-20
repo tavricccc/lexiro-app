@@ -2,10 +2,11 @@ import * as Haptics from "expo-haptics";
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { colors, type } from "@/lib/theme";
 import { Button } from "./button";
+import { pop, swapIn } from "./motion";
 
 /** The end of a flow: what was done, the way out, and one more of the same. */
 export function FinishPanel({
@@ -31,7 +32,7 @@ export function FinishPanel({
   return (
     <View style={styles.root}>
       <Animated.View
-        entering={ZoomIn.springify().damping(12)}
+        entering={pop}
         style={styles.mark}
       >
         <SymbolView
@@ -45,7 +46,7 @@ export function FinishPanel({
         <Text style={styles.title}>{title}</Text>
         {description ? <Text style={styles.body}>{description}</Text> : null}
       </View>
-      <Animated.View entering={FadeIn.delay(160)} style={styles.actions}>
+      <Animated.View entering={swapIn.delay(160)} style={styles.actions}>
         <Button label={finishLabel} onPress={onFinish} />
         {onMore && moreLabel ? (
           <Button

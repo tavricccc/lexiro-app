@@ -10,10 +10,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { ListGroup, ListRow, TextBlockRow } from "@/components/ui/list";
-import { glide } from "@/components/ui/motion";
+import { glide, swapIn, swapOut } from "@/components/ui/motion";
 import { remapOptionReasons } from "@/core/components/questions/option-reasons";
 import { t } from "@/core/lib/i18n";
 import { colors, radius, space, type } from "@/lib/theme";
@@ -125,8 +125,8 @@ export function ReasonFields({
         ? wrong.map(({ option, index }) => (
             <Animated.View
               key={index}
-              entering={FadeIn.duration(200)}
-              exiting={FadeOut.duration(140)}
+              entering={swapIn}
+              exiting={swapOut}
               layout={glide}
             >
               <TextBlockRow

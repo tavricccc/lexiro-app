@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Share, StyleSheet, Text } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { FormScreen, SheetHeader } from "@/components/form-sheet";
 import { SignInPrompt } from "@/components/sign-in-prompt";
@@ -121,7 +121,7 @@ export default function ShareLinkScreen() {
         </Animated.View>
       )}
       {error ? (
-        <Animated.View entering={FadeIn}>
+        <Animated.View entering={swapIn}>
           <Text style={styles.error}>{error}</Text>
         </Animated.View>
       ) : null}

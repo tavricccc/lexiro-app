@@ -1,9 +1,9 @@
 import { SymbolView } from "expo-symbols";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { ListGroup } from "@/components/ui/list";
-import { glide } from "@/components/ui/motion";
+import { glide, pop, swapIn, swapOut } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import type { RoomPlayer, RoomState } from "@/core/lib/room-client";
 import { colors, space, type } from "@/lib/theme";
@@ -50,8 +50,8 @@ export function PlayerList({
         return (
           <Animated.View
             key={player.uid}
-            entering={FadeIn.duration(220)}
-            exiting={FadeOut.duration(160)}
+            entering={swapIn}
+            exiting={swapOut}
             layout={glide}
             style={styles.row}
           >
@@ -66,7 +66,7 @@ export function PlayerList({
               {detail ? <Text style={styles.tags}>{detail}</Text> : null}
             </View>
             {showAnswered && player.answered ? (
-              <Animated.View entering={ZoomIn.springify().damping(12)}>
+              <Animated.View entering={pop}>
                 <SymbolView
                   name="checkmark.circle.fill"
                   size={20}

@@ -1,10 +1,11 @@
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text } from "react-native";
-import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, radius, type } from "@/lib/theme";
 import { toast, useToasts } from "@/platform/toast";
+import { enterUp, swapOut } from "@/components/ui/motion";
 
 const ICONS = {
   success: "checkmark.circle.fill",
@@ -20,8 +21,8 @@ export function ToastHost() {
   return (
     <Animated.View
       key={current.id}
-      entering={FadeInUp.springify().damping(18)}
-      exiting={FadeOutUp.duration(160)}
+      entering={enterUp}
+      exiting={swapOut}
       style={[styles.wrap, { top: insets.top + 8 }]}
       pointerEvents="box-none"
     >

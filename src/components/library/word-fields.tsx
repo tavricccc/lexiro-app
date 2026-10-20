@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import {
   ActionRow,
@@ -7,7 +7,7 @@ import {
   ListGroup,
   TextBlockRow,
 } from "@/components/ui/list";
-import { glide, swapIn } from "@/components/ui/motion";
+import { glide, swapIn, swapOut } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { randomUUID } from "@/core/lib/id";
 import type { WordDraft } from "@/core/types";
@@ -51,8 +51,8 @@ export function ExampleRows({
     ...values.map((example, index) => (
       <Animated.View
         key={`example-${index}`}
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(140)}
+        entering={swapIn}
+        exiting={swapOut}
         layout={glide}
       >
         <TextBlockRow
@@ -123,7 +123,7 @@ export function WordFields({
         <Animated.View
           key={sense.id}
           entering={swapIn}
-          exiting={FadeOut.duration(160)}
+          exiting={swapOut}
           layout={glide}
         >
           <ListGroup
@@ -184,7 +184,7 @@ export function WordFields({
       </Animated.View>
 
       {submitted && wordDraftIncomplete(draft) ? (
-        <Animated.View entering={FadeIn}>
+        <Animated.View entering={swapIn}>
           <Text style={styles.error}>
             還有欄位沒填完，紅字標示的欄位需要補齊。
           </Text>

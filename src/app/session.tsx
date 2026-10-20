@@ -3,12 +3,7 @@ import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  FadeInRight,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -22,7 +17,7 @@ import {
 import { ResultView } from "@/components/practice/result-view";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
-import { swapIn } from "@/components/ui/motion";
+import { enterDown, slideNext, swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
 import { useTransitionDone } from "@/components/ui/use-transition-done";
@@ -250,7 +245,7 @@ function Session({ run }: { run: PracticeRun }) {
         onSkip={!reviewing && selected === null ? actions.skip : undefined}
       />
       {reviewing ? (
-        <Animated.Text entering={FadeIn} style={styles.reviewing}>
+        <Animated.Text entering={swapIn} style={styles.reviewing}>
           {t("practice.reviewing")}
         </Animated.Text>
       ) : null}
@@ -264,7 +259,7 @@ function Session({ run }: { run: PracticeRun }) {
           key={passageId ? `passage:${passageId}` : viewed.id}
           entering={
             actions.animateNextCard
-              ? FadeInRight.duration(240).easing(Easing.out(Easing.cubic))
+              ? slideNext
               : undefined
           }
         >
@@ -281,7 +276,7 @@ function Session({ run }: { run: PracticeRun }) {
 
       {showDock ? (
         <Animated.View
-          entering={FadeInDown.duration(210).easing(Easing.out(Easing.cubic))}
+          entering={enterDown}
           style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
         >
           {canGoBack ? (

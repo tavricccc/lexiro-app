@@ -30,9 +30,10 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
-import Animated, { ZoomIn, ZoomOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { BRAND_LIGHT, colors, radius, space, type } from "@/lib/theme";
+import { pop, popOut } from "./motion";
 
 const ICON_INSET = space.row + 24 + 14;
 
@@ -193,8 +194,8 @@ export function CheckRow({
         <View style={styles.check}>
           {checked ? (
             <Animated.View
-              entering={ZoomIn.springify().damping(14)}
-              exiting={ZoomOut.duration(120)}
+              entering={pop}
+              exiting={popOut}
             >
               <SymbolView
                 name="checkmark"

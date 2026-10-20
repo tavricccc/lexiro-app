@@ -1,14 +1,14 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { useActiveRoom } from "@/components/rooms/use-active-room";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { glide } from "@/components/ui/motion";
+import { glide, swapIn, swapOut } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { normalizeRoomCode, ROOM_CODE_PATTERN } from "@/core/lib/room-client";
 import { useCloudStore } from "@/core/stores/cloud-store";
@@ -33,7 +33,7 @@ export default function RoomsScreen() {
   return (
     <Screen keyboardShouldPersistTaps="handled">
       {active ? (
-        <Animated.View entering={FadeIn} exiting={FadeOut} layout={glide}>
+        <Animated.View entering={swapIn} exiting={swapOut} layout={glide}>
           <ListGroup footer={t("rooms.activeRoomHint")}>
             <ListRow
               icon="person.2.wave.2.fill"
