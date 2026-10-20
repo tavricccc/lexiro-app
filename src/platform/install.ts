@@ -65,7 +65,8 @@ g.location ??= {
 };
 
 // Foreground/background stand in for the page's visibility and pagehide, so
-// the stores flush and sync at the same moments they do on the web.
+// the stores flush and sync at the same moments they do on the web. Coming
+// back only wakes the status poll; a full sync runs when it reports a change.
 const doc = { ...eventTarget(), visibilityState: "visible" as DocumentVisibilityState };
 g.document ??= doc;
 AppState.addEventListener("change", (state) => {
@@ -73,7 +74,7 @@ AppState.addEventListener("change", (state) => {
   if (visible === (doc.visibilityState === "visible")) return;
   doc.visibilityState = visible ? "visible" : "hidden";
   doc.dispatchEvent(new Event("visibilitychange"));
-  windowEvents.dispatchEvent(new Event(visible ? "online" : "pagehide"));
+  if (!visible) windowEvents.dispatchEvent(new Event("pagehide"));
 });
 
 const nav = (g.navigator ??= {}) as Record<string, unknown>;
