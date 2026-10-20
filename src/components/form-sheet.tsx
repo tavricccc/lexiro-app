@@ -1,5 +1,5 @@
 import { router, Stack } from "expo-router";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { Screen } from "@/components/ui/layout";
 import { showActionSheet } from "@/components/ui/menu";
@@ -27,6 +27,7 @@ export function SheetHeader({
   title,
   saveLabel,
   cancelLabel,
+  cancelIcon,
   onSave,
   onCancel,
   busy,
@@ -34,6 +35,8 @@ export function SheetHeader({
   title: string;
   saveLabel?: string;
   cancelLabel?: string;
+  /** A step back inside a flow: the icon alone, as the native back button. */
+  cancelIcon?: ComponentProps<typeof Stack.Toolbar.Button>["icon"];
   onSave?: () => void;
   onCancel: () => void;
   busy?: boolean;
@@ -42,7 +45,11 @@ export function SheetHeader({
     <>
       <Stack.Screen options={{ title }} />
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button onPress={onCancel} disabled={busy}>
+        <Stack.Toolbar.Button
+          icon={cancelIcon}
+          onPress={onCancel}
+          disabled={busy}
+        >
           {cancelLabel ?? t("common.cancel")}
         </Stack.Toolbar.Button>
       </Stack.Toolbar>
