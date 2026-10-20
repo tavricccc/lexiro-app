@@ -10,6 +10,7 @@ import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
 import { swapIn } from "@/components/ui/motion";
+import { useTransitionDone } from "@/components/ui/use-transition-done";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
 import { allStudyWords, studyWordsFor } from "@/lexiro/library";
@@ -49,7 +50,23 @@ function reshuffle(items: QuestionItem[]): QuestionItem[] {
 const answerText = (item: QuestionItem) =>
   item.type === "meaning" ? item.meaning : item.options[item.answerIndex]!;
 
+/** The sheet slides up first; the round is dealt and drawn once it is in place. */
 export default function SessionScreen() {
+  const ready = useTransitionDone();
+  if (!ready)
+    return (
+      <SafeAreaView style={styles.root}>
+        <TopBar />
+      </SafeAreaView>
+    );
+  return (
+    <Animated.View entering={swapIn} style={styles.root}>
+      <SessionRound />
+    </Animated.View>
+  );
+}
+
+function SessionRound() {
   const params = useLocalSearchParams<{ setId?: string; tasks?: string; amount?: string }>();
   const library = useLibraryStore((store) => store.state);
   const insets = useSafeAreaInsets();
