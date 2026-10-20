@@ -3,8 +3,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown, FadeInRight, ZoomIn } from "react-native-reanimated";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  ZoomIn,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { Button } from "@/components/ui/button";
@@ -28,7 +32,9 @@ import { colors, radius, space, type } from "@/lib/theme";
 function parseTasks(value: string | undefined): WordTask[] {
   const tasks = (value ?? "meaning")
     .split(",")
-    .filter((task): task is WordTask => task === "meaning" || task === "reverse");
+    .filter(
+      (task): task is WordTask => task === "meaning" || task === "reverse",
+    );
   return tasks.length ? tasks : ["meaning"];
 }
 
@@ -53,21 +59,28 @@ const answerText = (item: QuestionItem) =>
 /** The sheet slides up first; the round is dealt and drawn once it is in place. */
 export default function SessionScreen() {
   const ready = useTransitionDone();
-  if (!ready)
-    return (
-      <SafeAreaView style={styles.root}>
-        <TopBar />
-      </SafeAreaView>
-    );
+  // Insets come from here: a native SafeAreaView measures zero while its
+  // parent is mid entering animation.
+  const insets = useSafeAreaInsets();
   return (
-    <Animated.View entering={swapIn} style={styles.root}>
-      <SessionRound />
-    </Animated.View>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      {ready ? (
+        <Animated.View entering={swapIn} style={styles.root}>
+          <SessionRound />
+        </Animated.View>
+      ) : (
+        <TopBar />
+      )}
+    </View>
   );
 }
 
 function SessionRound() {
-  const params = useLocalSearchParams<{ setId?: string; tasks?: string; amount?: string }>();
+  const params = useLocalSearchParams<{
+    setId?: string;
+    tasks?: string;
+    amount?: string;
+  }>();
   const library = useLibraryStore((store) => store.state);
   const insets = useSafeAreaInsets();
   const deal = () =>
@@ -97,7 +110,9 @@ function SessionRound() {
     const right = isCorrectChoice(item, option);
     if (!right) setMissed((list) => [...list, item]);
     void Haptics.notificationAsync(
-      right ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error,
+      right
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Error,
     );
   };
 
@@ -115,31 +130,50 @@ function SessionRound() {
 
   if (!items.length)
     return (
-      <SafeAreaView style={styles.root}>
+      <View style={[styles.root, { paddingBottom: insets.bottom }]}>
         <TopBar />
         <View style={styles.emptyWrap}>
           <EmptyState
             illustrated={false}
             title="沒有可以出的題目"
             body="每題需要另外三個不同意思的單字當選項，請挑單字多一點的範圍。"
-            action={<Button label="返回" variant="ghost" onPress={() => router.back()} />}
+            action={
+              <Button
+                label="返回"
+                variant="ghost"
+                onPress={() => router.back()}
+              />
+            }
           />
         </View>
-      </SafeAreaView>
+      </View>
     );
 
   if (finished) {
     const correct = items.length - missed.length;
     return (
-      <SafeAreaView style={styles.root} edges={["top"]}>
+      <View style={styles.root}>
         <TopBar />
-        <ScrollView contentContainerStyle={[styles.result, { paddingBottom: 140 + insets.bottom }]}>
-          <Animated.View entering={ZoomIn.springify().damping(16)} style={styles.finish}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.result,
+            { paddingBottom: 140 + insets.bottom },
+          ]}
+        >
+          <Animated.View
+            entering={ZoomIn.springify().damping(16)}
+            style={styles.finish}
+          >
             <Animated.View
               entering={ZoomIn.delay(180).springify().damping(10)}
               style={styles.finishMark}
             >
-              <SymbolView name="checkmark" size={26} weight="bold" tintColor={colors.studyInk} />
+              <SymbolView
+                name="checkmark"
+                size={26}
+                weight="bold"
+                tintColor={colors.studyInk}
+              />
             </Animated.View>
             <Text style={styles.finishLabel}>本輪答對</Text>
             <Text style={styles.finishScore}>
@@ -147,7 +181,9 @@ function SessionRound() {
               <Text style={styles.finishTotal}> / {items.length}</Text>
             </Text>
             <Text style={styles.finishNote}>
-              {missed.length ? `答錯 ${missed.length} 題，可以馬上重練。` : "全部答對。"}
+              {missed.length
+                ? `答錯 ${missed.length} 題，可以馬上重練。`
+                : "全部答對。"}
             </Text>
           </Animated.View>
 
@@ -203,23 +239,39 @@ function SessionRound() {
             </>
           )}
         </Animated.View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const answered = choice !== null;
   return (
-    <SafeAreaView style={styles.root} edges={["top"]}>
-      <TopBar progress={index / items.length} label={`${index + 1} / ${items.length}`} />
-      <ScrollView contentContainerStyle={[styles.question, { paddingBottom: 120 + insets.bottom }]}>
+    <View style={styles.root}>
+      <TopBar
+        progress={index / items.length}
+        label={`${index + 1} / ${items.length}`}
+      />
+      <ScrollView
+        contentContainerStyle={[
+          styles.question,
+          { paddingBottom: 120 + insets.bottom },
+        ]}
+      >
         <Animated.View
           key={item!.id}
           entering={FadeInRight.springify().damping(20).stiffness(200)}
           style={styles.head}
         >
-          <Text style={styles.task}>{item!.type === "meaning" ? "英選中" : "中選英"}</Text>
+          <Text style={styles.task}>
+            {item!.type === "meaning" ? "英選中" : "中選英"}
+          </Text>
           <View style={styles.promptRow}>
-            <Text style={[styles.prompt, item!.type === "reverse" && styles.promptZh]} selectable>
+            <Text
+              style={[
+                styles.prompt,
+                item!.type === "reverse" && styles.promptZh,
+              ]}
+              selectable
+            >
               {item!.prompt}
             </Text>
             {item!.type === "meaning" ? (
@@ -231,7 +283,11 @@ function SessionRound() {
                 onPress={() => speak(item!.prompt)}
                 style={styles.speak}
               >
-                <SymbolView name="speaker.wave.2.fill" size={18} tintColor={colors.brand} />
+                <SymbolView
+                  name="speaker.wave.2.fill"
+                  size={18}
+                  tintColor={colors.brand}
+                />
               </PressableScale>
             ) : null}
           </View>
@@ -248,15 +304,25 @@ function SessionRound() {
                   ? "wrong"
                   : "dim";
             return (
-              <Animated.View key={`${item!.id}:${optionIndex}`} entering={swapIn}>
-                <AnswerOption label={option} state={state} onPress={() => choose(optionIndex)} />
+              <Animated.View
+                key={`${item!.id}:${optionIndex}`}
+                entering={swapIn}
+              >
+                <AnswerOption
+                  label={option}
+                  state={state}
+                  onPress={() => choose(optionIndex)}
+                />
               </Animated.View>
             );
           })}
         </View>
 
         {answered && item!.type === "meaning" ? (
-          <Animated.Text entering={FadeInDown.duration(220)} style={styles.meaning}>
+          <Animated.Text
+            entering={FadeInDown.duration(220)}
+            style={styles.meaning}
+          >
             {item!.meaning}
           </Animated.Text>
         ) : null}
@@ -275,7 +341,7 @@ function SessionRound() {
           />
         </Animated.View>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -290,7 +356,12 @@ function TopBar({ progress, label }: { progress?: number; label?: string }) {
         onPress={() => router.back()}
         style={styles.close}
       >
-        <SymbolView name="xmark" size={15} weight="bold" tintColor={colors.foreground} />
+        <SymbolView
+          name="xmark"
+          size={15}
+          weight="bold"
+          tintColor={colors.foreground}
+        />
       </PressableScale>
       {progress !== undefined ? (
         <View style={styles.progress}>
@@ -374,10 +445,20 @@ const styles = StyleSheet.create({
     color: colors.studyPaper,
     fontVariant: ["tabular-nums"],
   },
-  finishTotal: { fontSize: 28, fontWeight: "500", letterSpacing: 0, color: colors.studySoft },
+  finishTotal: {
+    fontSize: 28,
+    fontWeight: "500",
+    letterSpacing: 0,
+    color: colors.studySoft,
+  },
   finishNote: { ...type.body, color: colors.studySoft },
   review: { gap: 8 },
-  reviewTitle: { ...type.section, color: colors.foreground, paddingHorizontal: 4, marginBottom: 2 },
+  reviewTitle: {
+    ...type.section,
+    color: colors.foreground,
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
   reviewItem: {
     gap: 4,
     paddingVertical: 14,
