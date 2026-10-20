@@ -370,6 +370,7 @@ export default function SetScreen() {
             {visibleQuestions.length ? (
               <View style={styles.stack}>
                 <ListGroup
+                  iconInset={false}
                   footer={
                     needle
                       ? t("setDetail.questionSearchCount", {
@@ -380,26 +381,34 @@ export default function SetScreen() {
                   }
                 >
                   {visibleQuestions.slice(0, limit).map((question) => (
-                    <ListRow
-                      key={question.id}
-                      icon={
-                        question.kind === "reading"
-                          ? "doc.text"
-                          : "list.bullet.rectangle"
-                      }
-                      title={questionText(question)}
-                      subtitle={[
-                        questionFormatLabel(questionFormat(question)),
-                        difficultyLabel(question.difficulty),
-                        ...(question.kind === "reading"
-                          ? [
-                              t("library.questionCount", {
-                                count: question.questions.length,
-                              }),
-                            ]
-                          : []),
-                      ].join(" · ")}
-                    />
+                    <View key={question.id} style={styles.word}>
+                      <View style={styles.wordBody}>
+                        <Text style={styles.questionMeta}>
+                          <Text style={styles.pos}>
+                            {questionFormatLabel(questionFormat(question))}
+                          </Text>
+                          {[
+                            "",
+                            difficultyLabel(question.difficulty),
+                            ...(question.kind === "reading"
+                              ? [
+                                  t("library.questionCount", {
+                                    count: question.questions.length,
+                                  }),
+                                ]
+                              : []),
+                          ].join(" · ")}
+                        </Text>
+                        <Text style={styles.questionTitle} numberOfLines={3}>
+                          {questionText(question)}
+                        </Text>
+                        {question.kind === "reading" && question.title ? (
+                          <Text style={styles.example} numberOfLines={2}>
+                            {question.passage}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
                   ))}
                 </ListGroup>
                 {!needle ? (
@@ -493,6 +502,13 @@ const styles = StyleSheet.create({
   meaning: { ...type.body, color: colors.foreground },
   pos: { color: colors.brand, fontStyle: "italic" },
   example: { ...type.hint, color: colors.muted },
+  questionMeta: { ...type.hint, color: colors.muted },
+  questionTitle: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: "600",
+    color: colors.foreground,
+  },
   speak: {
     width: 38,
     height: 38,
