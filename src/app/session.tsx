@@ -1,255 +1,262 @@
 import * as Haptics from "expo-haptics";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
+  FadeIn,
   FadeInDown,
   FadeInRight,
-  ZoomIn,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AnswerOption, type OptionState } from "@/components/answer-option";
+import {
+  currentRun,
+  type PracticeRun,
+} from "@/components/practice/practice-run";
+import {
+  QuestionView,
+  type AnsweredBlanks,
+} from "@/components/practice/question-view";
+import { ResultView } from "@/components/practice/result-view";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
 import { swapIn } from "@/components/ui/motion";
-import { useTransitionDone } from "@/components/ui/use-transition-done";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
-import { allStudyWords, studyWordsFor } from "@/lexiro/library";
+import { useTransitionDone } from "@/components/ui/use-transition-done";
+import { isCorrectChoice } from "@/core/components/practice/meaning-questions";
 import {
-  buildSession,
-  isCorrectChoice,
-  seededShuffle,
-  type QuestionItem,
-  type WordTask,
-} from "@/lexiro/questions";
+  buildWrongContent,
+  type PracticeEntry,
+} from "@/core/components/practice/practice-queue";
+import { usePersistPracticeSession } from "@/core/components/practice/use-practice-persistence";
+import { usePracticeSessionActions } from "@/core/components/practice/use-practice-session-actions";
+import { t } from "@/core/lib/i18n";
+import type { SenseId } from "@/core/types";
 import { speak } from "@/lib/speech";
-import { useLibraryStore } from "@/core/stores/library-store";
-import { colors, radius, space, type } from "@/lib/theme";
+import { colors, space, type } from "@/lib/theme";
 
-function parseTasks(value: string | undefined): WordTask[] {
-  const tasks = (value ?? "meaning")
-    .split(",")
-    .filter(
-      (task): task is WordTask => task === "meaning" || task === "reverse",
-    );
-  return tasks.length ? tasks : ["meaning"];
-}
-
-/** The same questions in a new order, each with its options dealt again. */
-function reshuffle(items: QuestionItem[]): QuestionItem[] {
-  return seededShuffle(items, String(Math.random())).map((item) => {
-    const order = seededShuffle(
-      item.options.map((_, index) => index),
-      `${item.id}:${Math.random()}`,
-    );
-    return {
-      ...item,
-      options: order.map((index) => item.options[index]!),
-      answerIndex: order.indexOf(item.answerIndex),
-    };
-  });
-}
-
-const answerText = (item: QuestionItem) =>
-  item.type === "meaning" ? item.meaning : item.options[item.answerIndex]!;
-
-/** The sheet slides up first; the round is dealt and drawn once it is in place. */
+/** The sheet slides up first; the session is drawn once it is in place. */
 export default function SessionScreen() {
   const ready = useTransitionDone();
   // Insets come from here: a native SafeAreaView measures zero while its
   // parent is mid entering animation.
   const insets = useSafeAreaInsets();
+  const [run] = useState(currentRun);
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      {ready ? (
+      {!ready ? (
+        <TopBar />
+      ) : run?.entries.length ? (
         <Animated.View entering={swapIn} style={styles.root}>
-          <SessionRound />
+          <Session run={run} />
         </Animated.View>
       ) : (
-        <TopBar />
+        <View style={[styles.root, { paddingBottom: insets.bottom }]}>
+          <TopBar />
+          <View style={styles.emptyWrap}>
+            <EmptyState
+              illustrated={false}
+              title={t("practice.noContent")}
+              body={t("practice.noSelection")}
+              action={
+                <Button
+                  label={t("practice.exit")}
+                  variant="ghost"
+                  onPress={() => router.back()}
+                />
+              }
+            />
+          </View>
+        </View>
       )}
     </View>
   );
 }
 
-function SessionRound() {
-  const params = useLocalSearchParams<{
-    setId?: string;
-    tasks?: string;
-    amount?: string;
-  }>();
-  const library = useLibraryStore((store) => store.state);
+/** The web's practice session: one queue, answered in order, saved as it goes. */
+function Session({ run }: { run: PracticeRun }) {
   const insets = useSafeAreaInsets();
-  const deal = () =>
-    buildSession(
-      studyWordsFor(library, params.setId ?? ""),
-      allStudyWords(library),
-      parseTasks(params.tasks),
-      Number(params.amount) || 20,
-    );
-  // A round keeps the questions it dealt; library updates mid-round do not change them.
-  const [items, setItems] = useState(deal);
-  const [index, setIndex] = useState(0);
-  const [choice, setChoice] = useState<number | null>(null);
-  const [missed, setMissed] = useState<QuestionItem[]>([]);
+  const saved = run.snapshot;
+  const { choices } = run;
+  const [entries, setEntries] = useState<PracticeEntry[] | null>(run.entries);
+  const [index, setIndex] = useState(saved?.index ?? 0);
+  const [revealed, setRevealed] = useState(saved?.revealed ?? false);
+  const [selected, setSelected] = useState<number | null>(
+    saved?.selected ?? null,
+  );
+  // The web's pick-then-confirm step; here a tap answers, so it stays empty.
+  const [, setPendingChoice] = useState<number | null>(null);
+  const [viewIndex, setViewIndex] = useState<number | null>(null);
+  const [correct, setCorrect] = useState(saved?.correct ?? 0);
+  const [wrong, setWrong] = useState<number[]>(saved?.wrong ?? []);
+  const [skipped, setSkipped] = useState<number[]>(saved?.skipped ?? []);
+  const [marked, setMarked] = useState<number[]>(saved?.marked ?? []);
+  const [retrying, setRetrying] = useState(saved?.retrying ?? false);
+  const [, setStarted] = useState(true);
+  const [failedSenses, setFailedSenses] = useState<SenseId[]>(
+    saved?.failedSenseIds ?? [],
+  );
+  const [answerChoices, setAnswerChoices] = useState<(number | null)[]>(
+    saved?.answerChoices ?? [],
+  );
 
-  const item = items[index];
-  const finished = index >= items.length;
+  const activeEntries = entries ?? [];
+  const total = activeEntries.length;
+  const complete = index >= total;
+  const current = activeEntries[index];
+  const reviewing = viewIndex !== null && viewIndex < index;
+  const viewPosition = reviewing ? viewIndex : index;
+  const viewed = activeEntries[viewPosition];
+  const viewedChoice = reviewing
+    ? (answerChoices[viewPosition] ?? null)
+    : selected;
+  const completedSteps = selected !== null ? index + 1 : index;
+  const progress = total ? Math.min(1, completedSteps / total) : 0;
+
+  // Answers already given in this passage fill their blanks in the text.
+  const answeredBlanks: AnsweredBlanks = {};
+  if (viewed?.item.question?.kind === "reading") {
+    const questionId = viewed.item.question.id;
+    activeEntries.forEach((entry, position) => {
+      const choice = answerChoices[position];
+      if (
+        entry.item.blank &&
+        entry.item.question?.id === questionId &&
+        choice != null
+      )
+        answeredBlanks[entry.item.blank] = {
+          answer: entry.item.options[entry.item.answerIndex],
+        };
+    });
+  }
+
+  usePersistPracticeSession({
+    amount: choices.amount,
+    answerChoices,
+    complete,
+    correct,
+    difficulty: choices.difficulty,
+    entries: activeEntries,
+    failedSenseIds: failedSenses,
+    index,
+    marked,
+    retrying,
+    revealed,
+    selected,
+    setId: choices.setId,
+    skipped,
+    started: true,
+    tasks: choices.tasks,
+    wrong,
+  });
+
+  const actions = usePracticeSessionActions({
+    activeEntries,
+    index,
+    queue: activeEntries,
+    questionFailedSenses: failedSenses,
+    selected,
+    setters: {
+      setAnswerChoices,
+      setCorrect,
+      setEntries,
+      setIndex,
+      setMarked,
+      setPendingChoice,
+      setQuestionFailedSenses: setFailedSenses,
+      setRetrying,
+      setRevealed,
+      setSelected,
+      setSkipped,
+      setStarted,
+      setViewIndex,
+      setWrong,
+    },
+  });
 
   // 英選中 reads the English prompt aloud; 中選英 would give the answer away.
   useEffect(() => {
-    if (item?.type === "meaning") speak(item.prompt);
-  }, [item]);
+    if (current?.item.type === "meaning") speak(current.item.prompt);
+  }, [current]);
 
-  const choose = (option: number) => {
-    if (!item || choice !== null) return;
-    setChoice(option);
-    const right = isCorrectChoice(item, option);
-    if (!right) setMissed((list) => [...list, item]);
+  const answer = (choice: number) => {
+    if (reviewing || selected !== null || !current) return;
+    actions.answer(choice);
     void Haptics.notificationAsync(
-      right
+      isCorrectChoice(current.item, choice)
         ? Haptics.NotificationFeedbackType.Success
         : Haptics.NotificationFeedbackType.Error,
     );
   };
-
-  const next = () => {
-    setChoice(null);
-    setIndex((value) => value + 1);
+  const toggleMark = () => {
+    void Haptics.selectionAsync();
+    setMarked((values) =>
+      values.includes(viewPosition)
+        ? values.filter((value) => value !== viewPosition)
+        : [...values, viewPosition],
+    );
+  };
+  const goPrevious = () => {
+    if (viewPosition > 0) setViewIndex(viewPosition - 1);
+  };
+  const goForward = () => {
+    const next = viewPosition + 1;
+    setViewIndex(next < index ? next : null);
   };
 
-  const startRound = (round: QuestionItem[]) => {
-    setItems(round);
-    setIndex(0);
-    setChoice(null);
-    setMissed([]);
-  };
-
-  if (!items.length)
+  if (complete)
     return (
-      <View style={[styles.root, { paddingBottom: insets.bottom }]}>
-        <TopBar />
-        <View style={styles.emptyWrap}>
-          <EmptyState
-            illustrated={false}
-            title="沒有可以出的題目"
-            body="每題需要另外三個不同意思的單字當選項，請挑單字多一點的範圍。"
-            action={
-              <Button
-                label="返回"
-                variant="ghost"
-                onPress={() => router.back()}
-              />
-            }
-          />
-        </View>
-      </View>
+      <ResultView
+        choices={choices}
+        correct={correct}
+        total={total}
+        skipped={skipped.length}
+        marked={marked.length}
+        wrongCount={wrong.length}
+        wrongContent={buildWrongContent(wrong, activeEntries, answerChoices)}
+        onRetry={() => actions.retry(wrong)}
+        onRetryMarked={marked.length ? () => actions.retry(marked) : undefined}
+        onNewRound={(next) => {
+          setEntries(next);
+          setIndex(0);
+          setCorrect(0);
+          setWrong([]);
+          setSkipped([]);
+          setMarked([]);
+          setSelected(null);
+          setRevealed(false);
+          setAnswerChoices([]);
+          setViewIndex(null);
+          setRetrying(false);
+          setFailedSenses([]);
+        }}
+      />
     );
+  if (!viewed) return null;
 
-  if (finished) {
-    const correct = items.length - missed.length;
-    return (
-      <View style={styles.root}>
-        <TopBar />
-        <ScrollView
-          contentContainerStyle={[
-            styles.result,
-            { paddingBottom: 140 + insets.bottom },
-          ]}
-        >
-          <Animated.View
-            entering={ZoomIn.springify().damping(16)}
-            style={styles.finish}
-          >
-            <Animated.View
-              entering={ZoomIn.delay(180).springify().damping(10)}
-              style={styles.finishMark}
-            >
-              <SymbolView
-                name="checkmark"
-                size={26}
-                weight="bold"
-                tintColor={colors.studyInk}
-              />
-            </Animated.View>
-            <Text style={styles.finishLabel}>本輪答對</Text>
-            <Text style={styles.finishScore}>
-              {correct}
-              <Text style={styles.finishTotal}> / {items.length}</Text>
-            </Text>
-            <Text style={styles.finishNote}>
-              {missed.length
-                ? `答錯 ${missed.length} 題，可以馬上重練。`
-                : "全部答對。"}
-            </Text>
-          </Animated.View>
+  const answered = viewedChoice !== null;
+  const canGoBack = viewPosition > 0;
+  const passageId =
+    viewed.item.question?.kind === "reading" ? viewed.item.question.id : null;
+  const isMarked = marked.includes(viewPosition);
+  const showDock = canGoBack || reviewing || answered;
 
-          {missed.length ? (
-            <View style={styles.review}>
-              <Text style={styles.reviewTitle}>錯題解析</Text>
-              {missed.map((entry, missIndex) => (
-                <Animated.View
-                  key={entry.id}
-                  entering={swapIn}
-                  style={styles.reviewItem}
-                >
-                  <Text style={styles.reviewPrompt}>{entry.prompt}</Text>
-                  <Text style={styles.reviewAnswer}>{answerText(entry)}</Text>
-                </Animated.View>
-              ))}
-            </View>
-          ) : null}
-        </ScrollView>
-        <Animated.View
-          entering={FadeInDown.delay(250).springify().damping(20)}
-          style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
-        >
-          {missed.length ? (
-            <>
-              <Button
-                label="再一輪"
-                variant="ghost"
-                onPress={() => startRound(deal())}
-                style={styles.dockSecondary}
-              />
-              <Button
-                label="重練錯題"
-                icon="arrow.counterclockwise"
-                onPress={() => startRound(reshuffle(missed))}
-                style={styles.dockPrimary}
-              />
-            </>
-          ) : (
-            <>
-              <Button
-                label="完成"
-                variant="ghost"
-                onPress={() => router.back()}
-                style={styles.dockSecondary}
-              />
-              <Button
-                label="再一輪"
-                icon="arrow.clockwise"
-                onPress={() => startRound(deal())}
-                style={styles.dockPrimary}
-              />
-            </>
-          )}
-        </Animated.View>
-      </View>
-    );
-  }
-
-  const answered = choice !== null;
   return (
     <View style={styles.root}>
       <TopBar
-        progress={index / items.length}
-        label={`${index + 1} / ${items.length}`}
+        progress={progress}
+        label={t("practice.progress", { current: viewPosition + 1, total })}
+        marked={isMarked}
+        onMark={toggleMark}
+        onSkip={!reviewing && selected === null ? actions.skip : undefined}
       />
+      {reviewing ? (
+        <Animated.Text entering={FadeIn} style={styles.reviewing}>
+          {t("practice.reviewing")}
+        </Animated.Text>
+      ) : null}
       <ScrollView
         contentContainerStyle={[
           styles.question,
@@ -257,119 +264,138 @@ function SessionRound() {
         ]}
       >
         <Animated.View
-          key={item!.id}
-          entering={FadeInRight.springify().damping(20).stiffness(200)}
-          style={styles.head}
+          key={passageId ? `passage:${passageId}` : viewed.id}
+          entering={
+            actions.animateNextCard
+              ? FadeInRight.springify().damping(20).stiffness(200)
+              : undefined
+          }
         >
-          <Text style={styles.task}>
-            {item!.type === "meaning" ? "英選中" : "中選英"}
-          </Text>
-          <View style={styles.promptRow}>
-            <Text
-              style={[
-                styles.prompt,
-                item!.type === "reverse" && styles.promptZh,
-              ]}
-              selectable
-            >
-              {item!.prompt}
-            </Text>
-            {item!.type === "meaning" ? (
-              <PressableScale
-                scaleTo={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="朗讀單字"
-                hitSlop={10}
-                onPress={() => speak(item!.prompt)}
-                style={styles.speak}
-              >
-                <SymbolView
-                  name="speaker.wave.2.fill"
-                  size={18}
-                  tintColor={colors.brand}
-                />
-              </PressableScale>
-            ) : null}
-          </View>
+          <QuestionView
+            key={viewed.id}
+            item={viewed.item}
+            selected={viewedChoice}
+            readOnly={reviewing}
+            answeredBlanks={answeredBlanks}
+            onAnswer={answer}
+          />
         </Animated.View>
-
-        <View style={styles.options}>
-          {item!.options.map((option, optionIndex) => {
-            const isRight = isCorrectChoice(item!, optionIndex);
-            const state: OptionState = !answered
-              ? "idle"
-              : isRight
-                ? "right"
-                : choice === optionIndex
-                  ? "wrong"
-                  : "dim";
-            return (
-              <Animated.View
-                key={`${item!.id}:${optionIndex}`}
-                entering={swapIn}
-              >
-                <AnswerOption
-                  label={option}
-                  state={state}
-                  onPress={() => choose(optionIndex)}
-                />
-              </Animated.View>
-            );
-          })}
-        </View>
-
-        {answered && item!.type === "meaning" ? (
-          <Animated.Text
-            entering={FadeInDown.duration(220)}
-            style={styles.meaning}
-          >
-            {item!.meaning}
-          </Animated.Text>
-        ) : null}
       </ScrollView>
 
-      {answered ? (
+      {showDock ? (
         <Animated.View
           entering={FadeInDown.springify().damping(20)}
           style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
         >
-          <Button
-            label={index + 1 < items.length ? "下一題" : "看結果"}
-            icon={index + 1 < items.length ? "arrow.right" : "flag.checkered"}
-            onPress={next}
-            style={styles.dockPrimary}
-          />
+          {canGoBack ? (
+            <Button
+              label={t("practice.previous")}
+              icon="chevron.left"
+              variant="ghost"
+              onPress={goPrevious}
+              style={styles.dockSecondary}
+            />
+          ) : null}
+          {reviewing ? (
+            <Button
+              label={t("practice.forward")}
+              icon="chevron.right"
+              onPress={goForward}
+              style={styles.dockPrimary}
+            />
+          ) : answered ? (
+            <Button
+              label={
+                index === total - 1
+                  ? t("practice.viewResult")
+                  : t("practice.next")
+              }
+              icon={index === total - 1 ? "flag.checkered" : "arrow.right"}
+              onPress={() => actions.next()}
+              style={styles.dockPrimary}
+            />
+          ) : null}
         </Animated.View>
       ) : null}
     </View>
   );
 }
 
-function TopBar({ progress, label }: { progress?: number; label?: string }) {
+function TopBar({
+  progress,
+  label,
+  marked,
+  onMark,
+  onSkip,
+}: {
+  progress?: number;
+  label?: string;
+  marked?: boolean;
+  onMark?: () => void;
+  onSkip?: () => void;
+}) {
   return (
     <View style={styles.topBar}>
-      <PressableScale
-        scaleTo={0.88}
-        accessibilityRole="button"
-        accessibilityLabel="結束練習"
-        hitSlop={12}
+      <RoundButton
+        icon="xmark"
+        label={t("practice.exit")}
         onPress={() => router.back()}
-        style={styles.close}
-      >
-        <SymbolView
-          name="xmark"
-          size={15}
-          weight="bold"
-          tintColor={colors.foreground}
-        />
-      </PressableScale>
+      />
       {progress !== undefined ? (
         <View style={styles.progress}>
           <ProgressBar value={progress} tint={colors.brand} />
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.progress} />
+      )}
       {label ? <Text style={styles.counter}>{label}</Text> : null}
+      {onMark ? (
+        <RoundButton
+          icon={marked ? "flag.fill" : "flag"}
+          label={t("practice.mark")}
+          active={marked}
+          onPress={onMark}
+        />
+      ) : null}
+      {onSkip ? (
+        <RoundButton
+          icon="forward.end"
+          label={t("practice.skip")}
+          onPress={onSkip}
+        />
+      ) : null}
     </View>
+  );
+}
+
+function RoundButton({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: "xmark" | "flag" | "flag.fill" | "forward.end";
+  label: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale
+      scaleTo={0.88}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      hitSlop={8}
+      onPress={onPress}
+      style={[styles.round, active && styles.roundActive]}
+    >
+      <SymbolView
+        name={icon}
+        size={15}
+        weight="bold"
+        tintColor={active ? colors.brand : colors.foreground}
+      />
+    </PressableScale>
   );
 }
 
@@ -378,12 +404,12 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
     paddingHorizontal: space.gutter,
     paddingTop: 6,
     paddingBottom: 8,
   },
-  close: {
+  round: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -391,85 +417,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.secondary,
   },
+  roundActive: { backgroundColor: colors.brandSoft },
   progress: { flex: 1 },
   counter: { ...type.hint, color: colors.muted, fontVariant: ["tabular-nums"] },
-  emptyWrap: { padding: space.gutter },
-
-  question: { padding: space.gutter, gap: 18 },
-  head: { gap: 18 },
-  task: { ...type.hint, color: colors.muted, marginTop: 12 },
-  promptRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  prompt: {
-    fontSize: 42,
-    fontWeight: "700",
-    letterSpacing: -1,
-    color: colors.foreground,
-    flexShrink: 1,
-  },
-  promptZh: { fontSize: 30, letterSpacing: -0.4 },
-  speak: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.brandSoft,
-  },
-  options: { gap: 10, marginTop: 6 },
-  meaning: { ...type.body, color: colors.muted, paddingHorizontal: 4 },
-
-  result: { padding: space.gutter, gap: space.section },
-  finish: {
-    alignItems: "flex-start",
-    gap: 4,
-    padding: 24,
-    paddingTop: 28,
-    borderRadius: radius.stage,
-    borderCurve: "continuous",
-    backgroundColor: colors.studyInk,
-  },
-  finishMark: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.studyLime,
-    marginBottom: 14,
-  },
-  finishLabel: { ...type.body, color: colors.studySoft },
-  finishScore: {
-    fontSize: 64,
+  reviewing: {
+    ...type.hint,
     fontWeight: "600",
-    letterSpacing: -2,
-    color: colors.studyPaper,
-    fontVariant: ["tabular-nums"],
+    color: colors.brand,
+    paddingHorizontal: space.gutter,
   },
-  finishTotal: {
-    fontSize: 28,
-    fontWeight: "500",
-    letterSpacing: 0,
-    color: colors.studySoft,
-  },
-  finishNote: { ...type.body, color: colors.studySoft },
-  review: { gap: 8 },
-  reviewTitle: {
-    ...type.section,
-    color: colors.foreground,
-    paddingHorizontal: 4,
-    marginBottom: 2,
-  },
-  reviewItem: {
-    gap: 4,
-    paddingVertical: 14,
-    paddingHorizontal: space.row,
-    borderRadius: radius.control,
-    borderCurve: "continuous",
-    backgroundColor: colors.card,
-  },
-  reviewPrompt: { fontSize: 19, fontWeight: "700", color: colors.foreground },
-  reviewAnswer: { ...type.body, color: colors.muted },
-
+  emptyWrap: { padding: space.gutter },
+  question: { padding: space.gutter },
   dock: {
     position: "absolute",
     left: 0,
