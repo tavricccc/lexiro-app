@@ -12,7 +12,6 @@ import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { showActionSheet } from "@/components/ui/menu";
 import { glide, swapIn } from "@/components/ui/motion";
 import {
   ALL_FOLDER_ID,
@@ -195,25 +194,15 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
       ],
     );
   };
-  const moveFolder = () => {
+  const moveFolderTo = (parent: string) => {
     if (!currentFolder) return;
-    const here = currentFolder.parentId ?? ROOT_FOLDER;
-    showActionSheet({
-      title: t("library.moveFolder"),
-      actions: folderParentOptions(state.folders, currentFolder.id).map(
-        (option) => ({
-          label: option.label,
-          disabled: option.value === here,
-          onSelect: () =>
-            void store()
-              .moveFolder(
-                currentFolder.id,
-                option.value === ROOT_FOLDER ? undefined : option.value,
-              )
-              .catch(() => Alert.alert(t("library.folderNameConflict"))),
-        }),
-      ),
-    });
+    if (parent === (currentFolder.parentId ?? ROOT_FOLDER)) return;
+    void store()
+      .moveFolder(
+        currentFolder.id,
+        parent === ROOT_FOLDER ? undefined : parent,
+      )
+      .catch(() => Alert.alert(t("library.folderNameConflict")));
   };
 
   const listEmpty = !sets.length && (Boolean(needle) || !childFolders.length);
@@ -277,9 +266,25 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
               >
                 {t("library.renameFolder")}
               </Stack.Toolbar.MenuAction>
-              <Stack.Toolbar.MenuAction icon="folder" onPress={moveFolder}>
-                {t("library.moveFolder")}
-              </Stack.Toolbar.MenuAction>
+              <Stack.Toolbar.Menu
+                icon="folder"
+                title={t("library.moveFolder")}
+              >
+                {folderParentOptions(state.folders, currentFolder.id).map(
+                  (option) => (
+                    <Stack.Toolbar.MenuAction
+                      key={option.value}
+                      isOn={
+                        option.value ===
+                        (currentFolder.parentId ?? ROOT_FOLDER)
+                      }
+                      onPress={() => moveFolderTo(option.value)}
+                    >
+                      {option.label}
+                    </Stack.Toolbar.MenuAction>
+                  ),
+                )}
+              </Stack.Toolbar.Menu>
               <Stack.Toolbar.MenuAction
                 icon="trash"
                 destructive

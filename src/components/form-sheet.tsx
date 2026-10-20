@@ -1,8 +1,8 @@
 import { router, Stack } from "expo-router";
 import type { ComponentProps, ReactNode } from "react";
+import { Alert } from "react-native";
 
 import { Screen } from "@/components/ui/layout";
-import { showActionSheet } from "@/components/ui/menu";
 import { t } from "@/core/lib/i18n";
 import type { DraftPersistence } from "@/core/lib/draft-persistence";
 
@@ -73,18 +73,16 @@ export function leaveFlow(persistence: DraftPersistence, clear: () => void) {
     router.back();
     return;
   }
-  showActionSheet({
-    title: t("setEditor.unsavedTitle"),
-    actions: [
-      { label: t("draft.leave"), onSelect: () => router.back() },
-      {
-        label: t("setEditor.discard"),
-        destructive: true,
-        onSelect: () => {
-          clear();
-          router.back();
-        },
+  Alert.alert(t("setEditor.unsavedTitle"), undefined, [
+    { text: t("draft.leave"), onPress: () => router.back() },
+    {
+      text: t("setEditor.discard"),
+      style: "destructive",
+      onPress: () => {
+        clear();
+        router.back();
       },
-    ],
-  });
+    },
+    { text: t("common.cancel"), style: "cancel" },
+  ]);
 }

@@ -9,7 +9,6 @@ import { confirmDeleteQuestion } from "@/components/questions/delete-question";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { showActionSheet } from "@/components/ui/menu";
 import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
@@ -107,15 +106,7 @@ export default function SetScreen() {
     pathname:
       "/sets/[setId]/add" | "/sets/[setId]/settings" | "/sets/[setId]/share",
   ) => router.push({ pathname, params: { setId } });
-  const moveSet = () =>
-    showActionSheet({
-      title: t("setEditor.folder"),
-      actions: setFolderOptions(library.folders).map((option) => ({
-        label: option.label,
-        disabled: option.value === (set.folderId || UNCATEGORIZED_FOLDER_ID),
-        onSelect: () => void store().moveSet(setId, option.value),
-      })),
-    });
+  const currentFolder = set.folderId || UNCATEGORIZED_FOLDER_ID;
   const downloadShare = async () => {
     setSharing(true);
     try {
@@ -197,9 +188,20 @@ export default function SetScreen() {
           >
             {t("setDetail.edit")}
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="folder" onPress={moveSet}>
-            {t("setEditor.folder")}
-          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.Menu icon="folder" title={t("setEditor.folder")}>
+            {setFolderOptions(library.folders).map((option) => (
+              <Stack.Toolbar.MenuAction
+                key={option.value}
+                isOn={option.value === currentFolder}
+                onPress={() => {
+                  if (option.value !== currentFolder)
+                    void store().moveSet(setId, option.value);
+                }}
+              >
+                {option.label}
+              </Stack.Toolbar.MenuAction>
+            ))}
+          </Stack.Toolbar.Menu>
           <Stack.Toolbar.MenuAction
             icon="link"
             onPress={() => openSheet("/sets/[setId]/share")}
