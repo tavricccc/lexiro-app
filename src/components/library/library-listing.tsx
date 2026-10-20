@@ -4,6 +4,7 @@ import { Alert } from "react-native";
 import Animated from "react-native-reanimated";
 
 import { folderParentOptions, ROOT_FOLDER } from "@/components/library/folder-options";
+import { parseShareId } from "@/components/library/share-id";
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
@@ -118,6 +119,29 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
       setImporting(false);
     }
   };
+  const openShareLink = () =>
+    Alert.prompt(
+      "開啟分享連結",
+      "貼上別人傳給你的 Lexiro 分享連結。",
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.confirm"),
+          isPreferred: true,
+          onPress: (value?: string) => {
+            const shareId = parseShareId(value ?? "");
+            if (!shareId) {
+              Alert.alert(t("share.unavailable"));
+              return;
+            }
+            router.push({ pathname: "/sets/shared/[shareId]", params: { shareId } });
+          },
+        },
+      ],
+      "plain-text",
+      "",
+      "url",
+    );
   const folderSets = currentFolder
     ? state.sets.filter((entry) => collectFolderIds(state.folders, currentFolder.id).has(entry.folderId))
         .length
@@ -182,6 +206,9 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
               onPress={() => void importSet()}
             >
               {t(importing ? "library.importing" : "library.importSet")}
+            </Stack.Toolbar.MenuAction>
+            <Stack.Toolbar.MenuAction icon="link" onPress={openShareLink}>
+              開啟分享連結
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
           {currentFolder ? (
