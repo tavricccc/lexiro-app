@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { Pressable, StyleSheet, View, useColorScheme } from "react-native";
 import Animated, {
   interpolateColor,
@@ -62,8 +62,10 @@ export function Segmented<T extends string | number>({
           selected={optionIndex === index}
           onPress={() => {
             if (optionIndex === index) return;
+            // The pill moves now; the panel behind it renders when it can.
+            position.set(withSpring(optionIndex, SPRING));
             void Haptics.selectionAsync();
-            onChange(option.value);
+            startTransition(() => onChange(option.value));
           }}
         />
       ))}

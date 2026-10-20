@@ -2,14 +2,14 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import { setFolderOptions } from "@/components/library/folder-options";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { showActionSheet } from "@/components/ui/menu";
-import { glide, rise } from "@/components/ui/motion";
+import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
@@ -169,7 +169,7 @@ export default function SetScreen() {
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
       <Screen>
-        <Animated.View entering={rise(0)}>
+        <Animated.View entering={swapIn}>
           <Card style={styles.summary}>
             <Text style={styles.summaryText}>
               {t("setDetail.summary", { senses, questions: questionTotal })}
@@ -193,7 +193,7 @@ export default function SetScreen() {
           </Card>
         </Animated.View>
 
-        <Animated.View entering={rise(1)}>
+        <Animated.View entering={swapIn}>
           <Segmented
             value={tab}
             onChange={setTab}
@@ -206,7 +206,7 @@ export default function SetScreen() {
         </Animated.View>
 
         {tab === "words" ? (
-          <Animated.View key="words" entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} layout={glide}>
+          <Animated.View key="words" entering={swapIn}>
             {visibleWords.length ? (
               <ListGroup
                 iconInset={false}
@@ -275,7 +275,7 @@ export default function SetScreen() {
             )}
           </Animated.View>
         ) : tab === "questions" ? (
-          <Animated.View key="questions" entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} layout={glide}>
+          <Animated.View key="questions" entering={swapIn}>
             {visibleQuestions.length ? (
               <View style={styles.stack}>
                 <ListGroup
@@ -324,7 +324,7 @@ export default function SetScreen() {
             )}
           </Animated.View>
         ) : (
-          <Animated.View key="tools" entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} layout={glide}>
+          <Animated.View key="tools" entering={swapIn}>
             <ListGroup title={t("setDetail.toolsHeader")}>
               <ListRow
                 icon="plus.circle"
