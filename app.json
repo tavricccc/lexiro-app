@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lexiro-app",
+    "name": "Lexiro",
     "slug": "lexiro-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,9 @@
     "scheme": "lexiroapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "app.lexiro.ios",
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#3f7c5a",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
