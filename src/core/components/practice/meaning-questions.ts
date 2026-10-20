@@ -1,7 +1,11 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
 import type { StudyWord } from "@/core/types";
 import { normalizeWordKey } from "@/core/lib/library";
-import { seededShuffle, type QuestionItem } from "./practice-content";
+import {
+  seededRandom,
+  seededShuffle,
+  type QuestionItem,
+} from "./practice-content";
 
 /** Ignore presentation punctuation when comparing saved Chinese meanings. */
 function meaningKey(meaning: string): string {
@@ -15,49 +19,99 @@ function meaningParts(meaning: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Each sense with its spelling and meaning split once, so choosing a
+ * question's distractors costs a few lookups instead of a pass over the
+ * whole library.
+ */
+interface Candidate {
+  spelling: string;
+  word: string;
+  meaning: string;
+  key: string;
+  parts: string[];
+}
+
+function toCandidates(words: readonly StudyWord[]): Candidate[] {
+  return words.map((word) => ({
+    spelling: normalizeWordKey(word.word),
+    word: word.word.trim(),
+    meaning: word.meaning.trim(),
+    key: meaningKey(word.meaning),
+    parts: meaningParts(word.meaning),
+  }));
+}
+
+/** Random draws that usually find all three distractors. */
+const QUICK_DRAWS = 24;
+
+/**
+ * Three distractors in a seeded random order: a few random draws first, then
+ * one walk round the pool from a random start for whatever is still missing,
+ * so a pool that has three acceptable distractors always yields them.
+ */
+function pickDistractors(
+  candidates: readonly Candidate[],
+  seed: string,
+  accept: (candidate: Candidate) => boolean,
+): Candidate[] {
+  const random = seededRandom(seed);
+  const picked: Candidate[] = [];
+  const tried = new Set<number>();
+  const consider = (index: number) => {
+    if (tried.has(index)) return;
+    tried.add(index);
+    const candidate = candidates[index]!;
+    if (accept(candidate)) picked.push(candidate);
+  };
+  for (let draw = 0; draw < QUICK_DRAWS && picked.length < 3; draw += 1)
+    consider(Math.floor(random() * candidates.length));
+  const start = Math.floor(random() * candidates.length);
+  for (let step = 0; step < candidates.length && picked.length < 3; step += 1)
+    consider((start + step) % candidates.length);
+  return picked;
+}
+
 /** Every sense may supply the answer, but none may appear as a distractor. */
 export function buildMeaningQuestionGroups(
   words: readonly StudyWord[],
 ): QuestionItem[][] {
+  const candidates = toCandidates(words);
   const byWord = new Map<string, StudyWord[]>();
   const excludedBySpelling = new Map<string, Set<string>>();
-  for (const word of words) {
+  words.forEach((word, index) => {
     const senses = byWord.get(word.wordKey) ?? [];
     senses.push(word);
     byWord.set(word.wordKey, senses);
-    const spelling = normalizeWordKey(word.word);
+    const { spelling, parts } = candidates[index]!;
     const excluded = excludedBySpelling.get(spelling) ?? new Set<string>();
-    meaningParts(word.meaning).forEach((part) => excluded.add(part));
+    parts.forEach((part) => excluded.add(part));
     excludedBySpelling.set(spelling, excluded);
-  }
-  return words.flatMap((word) => {
+  });
+  return words.flatMap((word, index) => {
     const senses = byWord.get(word.wordKey)!;
     const acceptedMeanings = [
       ...new Set(senses.map((sense) => sense.meaning.trim())),
     ];
-    const spelling = normalizeWordKey(word.word);
+    const { spelling } = candidates[index]!;
     const excluded = excludedBySpelling.get(spelling)!;
     const seen = new Set<string>();
-    const distractors = seededShuffle(
-      [...words],
+    const distractors = pickDistractors(
+      candidates,
       `meaning:${word.id}:distractors`,
-    )
-      .filter((other) => {
-        if (normalizeWordKey(other.word) === spelling) return false;
-        const key = meaningKey(other.meaning);
-        const parts = meaningParts(other.meaning);
+      (other) => {
         if (
-          !key ||
-          !parts.length ||
-          parts.some((part) => excluded.has(part)) ||
-          seen.has(key)
+          other.spelling === spelling ||
+          !other.key ||
+          !other.parts.length ||
+          other.parts.some((part) => excluded.has(part)) ||
+          seen.has(other.key)
         )
           return false;
-        seen.add(key);
+        seen.add(other.key);
         return true;
-      })
-      .slice(0, 3)
-      .map((other) => other.meaning.trim());
+      },
+    ).map((other) => other.meaning);
     if (distractors.length !== 3) return [];
     const id = `meaning:${word.id}`;
     const options = seededShuffle([word.meaning.trim(), ...distractors], id);
@@ -85,27 +139,24 @@ export function buildMeaningQuestionGroups(
 export function buildReverseQuestionGroups(
   words: readonly StudyWord[],
 ): QuestionItem[][] {
-  return words.flatMap((word) => {
+  const candidates = toCandidates(words);
+  return words.flatMap((word, index) => {
     const answer = word.word.trim();
-    const spelling = normalizeWordKey(word.word);
-    const parts = new Set(meaningParts(word.meaning));
+    const { spelling } = candidates[index]!;
+    const parts = new Set(candidates[index]!.parts);
     if (!answer || !parts.size) return [];
     const seen = new Set<string>([spelling]);
-    const distractors = seededShuffle(
-      [...words],
+    const distractors = pickDistractors(
+      candidates,
       `reverse:${word.id}:distractors`,
-    )
-      .filter((other) => {
-        const key = normalizeWordKey(other.word);
-        if (!key || seen.has(key)) return false;
+      (other) => {
+        if (!other.spelling || seen.has(other.spelling)) return false;
         // A synonym would be a second right answer.
-        if (meaningParts(other.meaning).some((part) => parts.has(part)))
-          return false;
-        seen.add(key);
+        if (other.parts.some((part) => parts.has(part))) return false;
+        seen.add(other.spelling);
         return true;
-      })
-      .slice(0, 3)
-      .map((other) => other.word.trim());
+      },
+    ).map((other) => other.word);
     if (distractors.length !== 3) return [];
     const id = `reverse:${word.id}`;
     const options = seededShuffle([answer, ...distractors], id);

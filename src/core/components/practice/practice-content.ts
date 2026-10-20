@@ -41,7 +41,7 @@ export function usedBlankForOption(
   return used ? Number(used[0]) : undefined;
 }
 
-function seededRandom(seed: string): () => number {
+export function seededRandom(seed: string): () => number {
   let state = 2166136261;
   for (let index = 0; index < seed.length; index += 1) {
     state ^= seed.charCodeAt(index);
