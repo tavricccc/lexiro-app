@@ -65,7 +65,7 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: "練習",
-            headerBackTitle: "返回",
+            headerBackButtonDisplayMode: "minimal",
             headerShadowVisible: false,
             headerTintColor: dark ? "#eef4f0" : "#13201a",
             headerStyle: { backgroundColor: canvas },
@@ -78,7 +78,10 @@ export default function RootLayout() {
         />
       </Stack>
       {askSignIn ? (
-        <Animated.View exiting={FadeOut.duration(240)} style={StyleSheet.absoluteFill}>
+        <Animated.View
+          exiting={FadeOut.duration(240)}
+          style={StyleSheet.absoluteFill}
+        >
           <SignInPrompt
             onSkip={() => {
               localStorage.setItem(LOCAL_ONLY_KEY, "1");
@@ -93,7 +96,13 @@ export default function RootLayout() {
             illustrated={false}
             title="無法載入資料"
             body={error}
-            action={<Button label="重新載入" icon="arrow.clockwise" onPress={() => void reloadAppAsync()} />}
+            action={
+              <Button
+                label="重新載入"
+                icon="arrow.clockwise"
+                onPress={() => void reloadAppAsync()}
+              />
+            }
           />
         </View>
       ) : null}
@@ -103,5 +112,9 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  failed: { justifyContent: "center", padding: 16, backgroundColor: colors.canvas },
+  failed: {
+    justifyContent: "center",
+    padding: 16,
+    backgroundColor: colors.canvas,
+  },
 });

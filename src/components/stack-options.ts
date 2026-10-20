@@ -6,6 +6,8 @@ export const largeTitleOptions = {
   headerTransparent: true,
   headerLargeTitleShadowVisible: false,
   headerShadowVisible: false,
+  // Back is the chevron alone, never the previous title or 返回.
+  headerBackButtonDisplayMode: "minimal",
   headerTintColor: colors.foreground as string,
   headerLargeTitleStyle: { fontWeight: "800" },
   contentStyle: { backgroundColor: colors.canvas },

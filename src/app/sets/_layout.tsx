@@ -9,6 +9,7 @@ export default function SetsLayout() {
     <Stack
       screenOptions={{
         headerShadowVisible: false,
+        headerBackButtonDisplayMode: "minimal",
         headerTintColor: dark ? "#eef4f0" : "#13201a",
         headerStyle: { backgroundColor: canvas },
         contentStyle: { backgroundColor: canvas },
