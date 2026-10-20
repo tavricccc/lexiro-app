@@ -3,7 +3,6 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, View, useColorScheme } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { playerName } from "@/components/rooms/player-list";
 import { SignInPrompt } from "@/components/sign-in-prompt";
@@ -101,7 +100,6 @@ export default function RoomSetupScreen() {
 function RoomSetup() {
   const user = useCloudStore((store) => store.user);
   const state = useLibraryStore((store) => store.state);
-  const insets = useSafeAreaInsets();
   const [setId, setSetId] = useState("");
   const [difficulty, setDifficulty] =
     useState<WorkspaceQuestionDifficulty>("all");
@@ -204,95 +202,85 @@ function RoomSetup() {
   const empty = !Object.keys(state.words).length;
 
   return (
-    <View style={styles.root}>
-      <Screen contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}>
-        {empty ? (
-          <EmptyState
-            illustrated={false}
-            title={t("rooms.emptyBank")}
-            body=""
-          />
-        ) : (
-          <>
-            <ListGroup>
+    // The scroll view is the screen itself, so the large title collapses into
+    // the bar; the button ends the form and scrolls clear of the tab bar.
+    <Screen>
+      {empty ? (
+        <EmptyState illustrated={false} title={t("rooms.emptyBank")} body="" />
+      ) : (
+        <>
+          <ListGroup>
+            <PickerRow
+              title={t("practice.scopeHeader")}
+              icon="books.vertical"
+              value={setId}
+              options={[
+                { value: "", label: t("practice.allSets") },
+                ...state.sets.map((entry) => ({
+                  value: entry.id,
+                  label: entry.setName,
+                })),
+              ]}
+              onChange={setSetId}
+            />
+            {hasExam ? (
               <PickerRow
-                title={t("practice.scopeHeader")}
-                icon="books.vertical"
-                value={setId}
-                options={[
-                  { value: "", label: t("practice.allSets") },
-                  ...state.sets.map((entry) => ({
-                    value: entry.id,
-                    label: entry.setName,
-                  })),
-                ]}
-                onChange={setSetId}
+                title={t("practice.difficulty")}
+                icon="dial.medium"
+                value={difficulty}
+                options={DIFFICULTIES.map((level) => ({
+                  value: level,
+                  label:
+                    level === "all"
+                      ? t("practice.allDifficulties")
+                      : difficultyLabel(Number(level)),
+                }))}
+                onChange={setDifficulty}
               />
-              {hasExam ? (
-                <PickerRow
-                  title={t("practice.difficulty")}
-                  icon="dial.medium"
-                  value={difficulty}
-                  options={DIFFICULTIES.map((level) => ({
-                    value: level,
-                    label:
-                      level === "all"
-                        ? t("practice.allDifficulties")
-                        : difficultyLabel(Number(level)),
-                  }))}
-                  onChange={setDifficulty}
-                />
-              ) : null}
-            </ListGroup>
+            ) : null}
+          </ListGroup>
 
-            <ListGroup title="題型">
-              {PRACTICE_QUESTION_TASKS.map((task) => (
-                <SwitchRow
-                  key={task}
-                  icon={isWordTask(task) ? "character.book.closed" : "doc.text"}
-                  title={questionFormatLabel(task)}
-                  subtitle={`可出 ${counts[task]} 題`}
-                  value={tasks.includes(task)}
-                  disabled={!counts[task] && !tasks.includes(task)}
-                  onValueChange={(on) => toggle(task, on)}
-                />
-              ))}
-            </ListGroup>
-
-            <ListGroup footer={t("practice.oneSenseHint")}>
+          <ListGroup title="題型">
+            {PRACTICE_QUESTION_TASKS.map((task) => (
               <SwitchRow
-                icon="1.circle"
-                title={t("practice.oneSensePerWord")}
-                value={oneSensePerWord}
-                onValueChange={setOneSensePerWord}
+                key={task}
+                icon={isWordTask(task) ? "character.book.closed" : "doc.text"}
+                title={questionFormatLabel(task)}
+                subtitle={`可出 ${counts[task]} 題`}
+                value={tasks.includes(task)}
+                disabled={!counts[task] && !tasks.includes(task)}
+                onValueChange={(on) => toggle(task, on)}
               />
-            </ListGroup>
+            ))}
+          </ListGroup>
 
-            <Amount
-              label={t("practice.amount")}
-              value={chosenAmount}
-              unit="題"
-              min={1}
-              max={maxAmount}
-              onChange={setAmount}
+          <ListGroup footer={t("practice.oneSenseHint")}>
+            <SwitchRow
+              icon="1.circle"
+              title={t("practice.oneSensePerWord")}
+              value={oneSensePerWord}
+              onValueChange={setOneSensePerWord}
             />
-            <Amount
-              label={t("rooms.secondsLabel")}
-              value={seconds}
-              unit="秒"
-              min={10}
-              max={40}
-              step={5}
-              onChange={setSeconds}
-            />
-          </>
-        )}
-      </Screen>
+          </ListGroup>
 
-      {empty ? null : (
-        <View
-          style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
-        >
+          <Amount
+            label={t("practice.amount")}
+            value={chosenAmount}
+            unit="題"
+            min={1}
+            max={maxAmount}
+            onChange={setAmount}
+          />
+          <Amount
+            label={t("rooms.secondsLabel")}
+            value={seconds}
+            unit="秒"
+            min={10}
+            max={40}
+            step={5}
+            onChange={setSeconds}
+          />
+
           <Button
             label={
               busy
@@ -304,14 +292,13 @@ function RoomSetup() {
             disabled={!tasks.length || !queue.length}
             onPress={() => void open()}
           />
-        </View>
+        </>
       )}
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
   amount: {
     gap: 6,
     paddingVertical: 14,
@@ -336,14 +323,5 @@ const styles = StyleSheet.create({
     ...type.hint,
     color: colors.muted,
     fontVariant: ["tabular-nums"],
-  },
-  dock: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingTop: 12,
-    paddingHorizontal: space.gutter,
-    backgroundColor: colors.canvas,
   },
 });
