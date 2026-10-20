@@ -1,6 +1,7 @@
 // Browser globals for the shared web code; must load before anything from src/core.
 import { hydrateLocalStorage } from "@/platform/install";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { reloadAppAsync } from "expo";
 import * as SplashScreen from "expo-splash-screen";
@@ -19,6 +20,13 @@ SplashScreen.preventAutoHideAsync();
 
 // Same key as the web's CloudGate: the visitor chose to stay on this device.
 const LOCAL_ONLY_KEY = "lexiro:local-only";
+
+// The web's query defaults: the managed account balance is read through it.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 30_000, refetchOnWindowFocus: false },
+  },
+});
 
 export default function RootLayout() {
   const scheme = useColorScheme();
@@ -56,58 +64,60 @@ export default function RootLayout() {
   };
 
   return (
-    <ThemeProvider value={theme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="practice"
-          options={{
-            headerShown: true,
-            title: "練習",
-            headerBackButtonDisplayMode: "minimal",
-            headerShadowVisible: false,
-            headerTintColor: dark ? "#eef4f0" : "#13201a",
-            headerStyle: { backgroundColor: canvas },
-          }}
-        />
-        <Stack.Screen name="sets" options={{ presentation: "modal" }} />
-        <Stack.Screen
-          name="session"
-          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
-        />
-      </Stack>
-      {askSignIn ? (
-        <Animated.View
-          exiting={FadeOut.duration(240)}
-          style={StyleSheet.absoluteFill}
-        >
-          <SignInPrompt
-            onSkip={() => {
-              localStorage.setItem(LOCAL_ONLY_KEY, "1");
-              setLocalOnly(true);
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={theme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="practice"
+            options={{
+              headerShown: true,
+              title: "練習",
+              headerBackButtonDisplayMode: "minimal",
+              headerShadowVisible: false,
+              headerTintColor: dark ? "#eef4f0" : "#13201a",
+              headerStyle: { backgroundColor: canvas },
             }}
           />
-        </Animated.View>
-      ) : null}
-      {failed ? (
-        <View style={[StyleSheet.absoluteFill, styles.failed]}>
-          <EmptyState
-            illustrated={false}
-            title="無法載入資料"
-            body={error}
-            action={
-              <Button
-                label="重新載入"
-                icon="arrow.clockwise"
-                onPress={() => void reloadAppAsync()}
-              />
-            }
+          <Stack.Screen name="sets" options={{ presentation: "modal" }} />
+          <Stack.Screen
+            name="session"
+            options={{ presentation: "fullScreenModal", gestureEnabled: false }}
           />
-        </View>
-      ) : null}
-      <ToastHost />
-    </ThemeProvider>
+        </Stack>
+        {askSignIn ? (
+          <Animated.View
+            exiting={FadeOut.duration(240)}
+            style={StyleSheet.absoluteFill}
+          >
+            <SignInPrompt
+              onSkip={() => {
+                localStorage.setItem(LOCAL_ONLY_KEY, "1");
+                setLocalOnly(true);
+              }}
+            />
+          </Animated.View>
+        ) : null}
+        {failed ? (
+          <View style={[StyleSheet.absoluteFill, styles.failed]}>
+            <EmptyState
+              illustrated={false}
+              title="無法載入資料"
+              body={error}
+              action={
+                <Button
+                  label="重新載入"
+                  icon="arrow.clockwise"
+                  onPress={() => void reloadAppAsync()}
+                />
+              }
+            />
+          </View>
+        ) : null}
+        <ToastHost />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
