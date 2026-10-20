@@ -1,22 +1,30 @@
-import { SymbolView } from "expo-symbols";
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
-  withSpring,
   withTiming,
-  ZoomIn,
 } from "react-native-reanimated";
 
 import { PressableScale } from "@/components/ui/pressable-scale";
+import { VerdictMark } from "@/components/ui/verdict-mark";
 import { colors, radius, space } from "@/lib/theme";
 
 /** `chosen` is a pick still waiting for its reveal, as in a live room. */
 export type OptionState = "idle" | "chosen" | "right" | "wrong" | "dim";
 
-/** One answer: the right one pops, a wrong pick shakes, the rest step back. */
+const FADE = { duration: 190, easing: Easing.out(Easing.quad) };
+const LIFT = { duration: 120, easing: Easing.out(Easing.cubic) };
+const SETTLE = { duration: 200, easing: Easing.out(Easing.cubic) };
+/** One overshoot, then still: a click of confirmation rather than a wobble. */
+const POP = { duration: 260, easing: Easing.out(Easing.back(1.6)) };
+
+/**
+ * One answer. The reveal is quiet and exact: the chosen row settles, the right
+ * answer lifts once, the rest step back, and the tick/cross pops in.
+ */
 export function AnswerOption({
   label,
   note,
@@ -32,42 +40,33 @@ export function AnswerOption({
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
-  const shift = useSharedValue(0);
   const fade = useSharedValue(1);
+  const mark = useSharedValue(0);
 
   useEffect(() => {
-    if (state === "right")
-      scale.set(
-        withSequence(
-          withSpring(1.035, { damping: 10, stiffness: 400 }),
-          withSpring(1, { damping: 12, stiffness: 220 }),
-        ),
-      );
-    if (state === "chosen")
-      scale.set(
-        withSequence(
-          withSpring(0.97, { damping: 14, stiffness: 500 }),
-          withSpring(1, { damping: 14, stiffness: 260 }),
-        ),
-      );
-    if (state === "wrong")
-      shift.set(
-        withSequence(
-          withTiming(-8, { duration: 50 }),
-          withTiming(8, { duration: 70 }),
-          withTiming(-5, { duration: 60 }),
-          withTiming(5, { duration: 60 }),
-          withTiming(0, { duration: 50 }),
-        ),
-      );
-    fade.set(
-      withTiming(state === "dim" || disabled ? 0.5 : 1, { duration: 220 }),
+    fade.set(withTiming(state === "dim" || disabled ? 0.45 : 1, FADE));
+
+    scale.set(
+      state === "right"
+        ? withSequence(withTiming(1.02, LIFT), withTiming(1, SETTLE))
+        : withTiming(1, SETTLE),
     );
-  }, [state, disabled, scale, shift, fade]);
+
+    mark.set(
+      state === "right" || state === "wrong"
+        ? withTiming(1, POP)
+        : withTiming(0, { duration: 120 }),
+    );
+  }, [state, disabled, scale, fade, mark]);
 
   const motion = useAnimatedStyle(() => ({
     opacity: fade.value,
-    transform: [{ translateX: shift.value }, { scale: scale.value }],
+    transform: [{ scale: scale.value }],
+  }));
+
+  const markMotion = useAnimatedStyle(() => ({
+    opacity: Math.min(1, Math.max(0, mark.value)),
+    transform: [{ scale: 0.55 + 0.45 * mark.value }],
   }));
 
   const answered = state !== "idle" || Boolean(disabled);
@@ -94,18 +93,8 @@ export function AnswerOption({
           {note ? <Text style={styles.note}>{note}</Text> : null}
         </View>
         {state === "right" || state === "wrong" ? (
-          <Animated.View entering={ZoomIn.springify().damping(12)}>
-            <SymbolView
-              name={
-                state === "right"
-                  ? "checkmark.circle.fill"
-                  : "xmark.circle.fill"
-              }
-              size={24}
-              tintColor={
-                state === "right" ? colors.success : colors.destructive
-              }
-            />
+          <Animated.View style={markMotion}>
+            <VerdictMark correct={state === "right"} size={24} />
           </Animated.View>
         ) : null}
       </PressableScale>

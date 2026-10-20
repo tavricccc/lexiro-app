@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const PRESS = { damping: 18, stiffness: 420, mass: 0.6 };
-const RELEASE = { damping: 14, stiffness: 260, mass: 0.7 };
+/** Sink under the finger, release cleanly: no spring, so nothing wobbles. */
+const PRESS = { duration: 90, easing: Easing.out(Easing.quad) };
+const RELEASE = { duration: 160, easing: Easing.out(Easing.cubic) };
 
-/** A pressable that sinks a little under the finger and springs back. */
+/** A pressable that sinks a little under the finger and eases back. */
 export function PressableScale({
   scaleTo = 0.96,
   style,
@@ -26,11 +32,11 @@ export function PressableScale({
     <AnimatedPressable
       {...props}
       onPressIn={(event) => {
-        scale.set(withSpring(scaleTo, PRESS));
+        scale.set(withTiming(scaleTo, PRESS));
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        scale.set(withSpring(1, RELEASE));
+        scale.set(withTiming(1, RELEASE));
         onPressOut?.(event);
       }}
       style={[style, animated]}

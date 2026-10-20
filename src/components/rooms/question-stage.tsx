@@ -1,13 +1,13 @@
 import * as Haptics from "expo-haptics";
-import { SymbolView } from "expo-symbols";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
+import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { Card } from "@/components/ui/layout";
 import { swapIn } from "@/components/ui/motion";
 import { ProgressBar } from "@/components/ui/progress";
+import { VerdictMark } from "@/components/ui/verdict-mark";
 import { t } from "@/core/lib/i18n";
 import type { RoomState } from "@/core/lib/room-client";
 import { colors, radius, type } from "@/lib/theme";
@@ -145,16 +145,12 @@ export function QuestionStage({
 
       {reveal ? (
         <Animated.View
-          entering={FadeInUp.springify().damping(18)}
+          entering={FadeInUp.duration(230).easing(Easing.out(Easing.cubic))}
           style={styles.result}
         >
           <View style={styles.verdict}>
             {state.yourChoice !== null ? (
-              <SymbolView
-                name={correct ? "checkmark.circle.fill" : "xmark.circle.fill"}
-                size={22}
-                tintColor={correct ? colors.success : colors.destructive}
-              />
+              <VerdictMark correct={correct} size={22} />
             ) : null}
             <Text
               style={[

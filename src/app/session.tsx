@@ -4,6 +4,7 @@ import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInRight,
@@ -267,7 +268,7 @@ function Session({ run }: { run: PracticeRun }) {
           key={passageId ? `passage:${passageId}` : viewed.id}
           entering={
             actions.animateNextCard
-              ? FadeInRight.springify().damping(20).stiffness(200)
+              ? FadeInRight.duration(240).easing(Easing.out(Easing.cubic))
               : undefined
           }
         >
@@ -284,7 +285,7 @@ function Session({ run }: { run: PracticeRun }) {
 
       {showDock ? (
         <Animated.View
-          entering={FadeInDown.springify().damping(20)}
+          entering={FadeInDown.duration(210).easing(Easing.out(Easing.cubic))}
           style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
         >
           {canGoBack ? (

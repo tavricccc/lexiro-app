@@ -1,7 +1,7 @@
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { Easing, FadeInDown } from "react-native-reanimated";
 
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { PassageText } from "@/components/rooms/passage-text";
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/layout";
 import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
+import { VerdictMark } from "@/components/ui/verdict-mark";
 import {
   isCorrectChoice,
   isWordTask,
@@ -235,14 +236,12 @@ function Feedback({
   const answerMeaning =
     item.type === "vocabulary" || item.type === "wordBank" ? item.meaning : "";
   return (
-    <Animated.View entering={FadeIn.duration(220)}>
+    <Animated.View
+      entering={FadeInDown.duration(230).easing(Easing.out(Easing.cubic))}
+    >
       <Card style={styles.feedback}>
         <View style={styles.verdict}>
-          <SymbolView
-            name={correct ? "checkmark.circle.fill" : "xmark.circle.fill"}
-            size={20}
-            tintColor={correct ? colors.success : colors.destructive}
-          />
+          <VerdictMark correct={correct} size={22} />
           <Text
             style={[
               styles.verdictText,

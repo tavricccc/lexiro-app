@@ -1,14 +1,14 @@
 import { router } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
+import Animated, { Easing, FadeIn, ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/layout";
 import { Markdown } from "@/components/ui/markdown";
 import { swapIn } from "@/components/ui/motion";
+import { VerdictMark } from "@/components/ui/verdict-mark";
 import { estimatePoints } from "@/core/ai-contract";
 import {
   buildPracticeQueue,
@@ -92,18 +92,20 @@ export function ResultView({
       ]}
     >
       <Animated.View
-        entering={ZoomIn.springify().damping(16)}
+        entering={ZoomIn.duration(280).easing(Easing.out(Easing.cubic))}
         style={styles.finish}
       >
         <Animated.View
-          entering={ZoomIn.delay(180).springify().damping(10)}
+          entering={ZoomIn.delay(120)
+            .duration(260)
+            .easing(Easing.out(Easing.back(1.5)))}
           style={styles.finishMark}
         >
-          <SymbolView
-            name="checkmark"
-            size={26}
-            weight="bold"
-            tintColor={colors.studyInk}
+          <VerdictMark
+            correct
+            size={28}
+            disc={false}
+            markColor={colors.studyInk}
           />
         </Animated.View>
         <Text style={styles.finishLabel}>{t("practice.resultTitle")}</Text>

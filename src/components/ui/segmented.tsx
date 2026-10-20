@@ -2,11 +2,12 @@ import * as Haptics from "expo-haptics";
 import { startTransition, useEffect, useState } from "react";
 import { Pressable, StyleSheet, View, useColorScheme } from "react-native";
 import Animated, {
+  Easing,
   interpolateColor,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
-  withSpring,
+  withTiming,
   type SharedValue,
 } from "react-native-reanimated";
 
@@ -14,7 +15,7 @@ import { colors, hexPalette, radius } from "@/lib/theme";
 
 const PADDING = 4;
 const GAP = 4;
-const SPRING = { damping: 22, stiffness: 260, mass: 0.9 };
+const SLIDE = { duration: 200, easing: Easing.out(Easing.cubic) };
 
 /**
  * Equal-width tabs on a card track; the contrast pill slides to the chosen
@@ -37,7 +38,7 @@ export function Segmented<T extends string | number>({
   const position = useSharedValue(index);
 
   useEffect(() => {
-    position.set(withSpring(index, SPRING));
+    position.set(withTiming(index, SLIDE));
   }, [index, position]);
 
   const segment = width ? (width - PADDING * 2 - GAP * (options.length - 1)) / options.length : 0;
@@ -63,7 +64,7 @@ export function Segmented<T extends string | number>({
           onPress={() => {
             if (optionIndex === index) return;
             // The pill moves now; the panel behind it renders when it can.
-            position.set(withSpring(optionIndex, SPRING));
+            position.set(withTiming(optionIndex, SLIDE));
             void Haptics.selectionAsync();
             startTransition(() => onChange(option.value));
           }}
