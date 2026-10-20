@@ -14,8 +14,14 @@ import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
-import { questionMatchesQuery, wordMatchesQuery } from "@/core/lib/library-search";
-import { difficultyLabel, questionFormatLabel } from "@/core/lib/question-options";
+import {
+  questionMatchesQuery,
+  wordMatchesQuery,
+} from "@/core/lib/library-search";
+import {
+  difficultyLabel,
+  questionFormatLabel,
+} from "@/core/lib/question-options";
 import { questionBelongsToMemberships } from "@/core/lib/question-ownership";
 import { createSetSharePayload } from "@/core/lib/set-share";
 import { useLibraryStore } from "@/core/stores/library-store";
@@ -28,6 +34,10 @@ import { toast } from "@/platform/toast";
 
 type Tab = "words" | "questions" | "tools";
 
+/** Rows drawn at first, and added each time the reader nears the end. */
+const PAGE = 60;
+const NEAR_END = 600;
+
 const itemCount = (question: LibraryQuestion) =>
   question.kind === "reading" ? question.questions.length : 1;
 
@@ -36,7 +46,9 @@ function questionFormat(question: LibraryQuestion) {
 }
 
 function questionText(question: LibraryQuestion) {
-  return question.kind === "reading" ? question.title || question.passage : question.prompt;
+  return question.kind === "reading"
+    ? question.title || question.passage
+    : question.prompt;
 }
 
 /** One set, as on the web: its words, its questions, and what can be done with it. */
@@ -48,18 +60,29 @@ export default function SetScreen() {
   const words = useMemo(() => setWords(library, setId), [library, setId]);
   const questions = useMemo(() => {
     const memberships = library.memberships[setId] ?? [];
-    return library.questions.filter((question) => questionBelongsToMemberships(question, memberships));
+    return library.questions.filter((question) =>
+      questionBelongsToMemberships(question, memberships),
+    );
   }, [library, setId]);
   const [tab, setTab] = useState<Tab>("words");
   const [query, setQuery] = useState("");
   const [sharing, setSharing] = useState(false);
+  // A large set draws a page of rows and adds more as the reader scrolls.
+  const listKey = `${tab}:${query}`;
+  const [shown, setShown] = useState({ key: listKey, limit: PAGE });
+  const limit = shown.key === listKey ? shown.limit : PAGE;
 
   const needle = query.trim().toLocaleLowerCase();
-  const visibleWords = needle ? words.filter((entry) => wordMatchesQuery(entry, needle)) : words;
+  const visibleWords = needle
+    ? words.filter((entry) => wordMatchesQuery(entry, needle))
+    : words;
   const visibleQuestions = needle
     ? questions.filter((question) => questionMatchesQuery(question, needle))
     : questions;
-  const questionTotal = questions.reduce((total, question) => total + itemCount(question), 0);
+  const questionTotal = questions.reduce(
+    (total, question) => total + itemCount(question),
+    0,
+  );
   const senses = senseCount(library, setId);
 
   if (!set)
@@ -79,8 +102,10 @@ export default function SetScreen() {
     );
 
   const store = useLibraryStore.getState;
-  const openSheet = (pathname: "/sets/[setId]/add" | "/sets/[setId]/settings" | "/sets/[setId]/share") =>
-    router.push({ pathname, params: { setId } });
+  const openSheet = (
+    pathname:
+      "/sets/[setId]/add" | "/sets/[setId]/settings" | "/sets/[setId]/share",
+  ) => router.push({ pathname, params: { setId } });
   const moveSet = () =>
     showActionSheet({
       title: t("setEditor.folder"),
@@ -101,23 +126,32 @@ export default function SetScreen() {
     }
   };
   const deleteSet = () =>
-    Alert.alert(t("setDetail.delete"), t("setDetail.deleteConfirm", { name: set.setName }), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("setDetail.delete"),
-        style: "destructive",
-        onPress: () => {
-          router.back();
-          void store().deleteSet(setId);
+    Alert.alert(
+      t("setDetail.delete"),
+      t("setDetail.deleteConfirm", { name: set.setName }),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("setDetail.delete"),
+          style: "destructive",
+          onPress: () => {
+            router.back();
+            void store().deleteSet(setId);
+          },
         },
-      },
-    ]);
+      ],
+    );
   const clearQuestions = () => {
-    const packs = questions.filter((question) => question.kind === "reading").length;
+    const packs = questions.filter(
+      (question) => question.kind === "reading",
+    ).length;
     Alert.alert(
       t("questions.clearSet"),
       [
-        t("questions.clearSetConfirm", { name: set.setName, count: questionTotal }),
+        t("questions.clearSetConfirm", {
+          name: set.setName,
+          count: questionTotal,
+        }),
         ...(packs ? [t("questions.clearPacks", { count: packs })] : []),
         t("questions.clearPreserves"),
       ].join("\n\n"),
@@ -129,7 +163,9 @@ export default function SetScreen() {
           onPress: () =>
             void store()
               .clearQuestions(setId)
-              .then(() => toast.success(t("questions.cleared", { count: questionTotal }))),
+              .then(() =>
+                toast.success(t("questions.cleared", { count: questionTotal })),
+              ),
         },
       ],
     );
@@ -140,20 +176,33 @@ export default function SetScreen() {
       <Stack.Screen options={{ title: set.setName }} />
       {tab !== "tools" ? (
         <Stack.SearchBar
-          placeholder={t(tab === "words" ? "setDetail.searchWords" : "setDetail.searchQuestions")}
+          placeholder={t(
+            tab === "words"
+              ? "setDetail.searchWords"
+              : "setDetail.searchQuestions",
+          )}
           onChangeText={(event) => setQuery(event.nativeEvent.text)}
           onCancelButtonPress={() => setQuery("")}
         />
       ) : null}
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t("common.more")}>
-          <Stack.Toolbar.MenuAction icon="pencil" onPress={() => openSheet("/sets/[setId]/settings")}>
+        <Stack.Toolbar.Menu
+          icon="ellipsis"
+          accessibilityLabel={t("common.more")}
+        >
+          <Stack.Toolbar.MenuAction
+            icon="pencil"
+            onPress={() => openSheet("/sets/[setId]/settings")}
+          >
             {t("setDetail.edit")}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction icon="folder" onPress={moveSet}>
             {t("setEditor.folder")}
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="link" onPress={() => openSheet("/sets/[setId]/share")}>
+          <Stack.Toolbar.MenuAction
+            icon="link"
+            onPress={() => openSheet("/sets/[setId]/share")}
+          >
             {t("setDetail.shareLink")}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
@@ -163,12 +212,30 @@ export default function SetScreen() {
           >
             {t("setDetail.share")}
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="trash" destructive onPress={deleteSet}>
+          <Stack.Toolbar.MenuAction
+            icon="trash"
+            destructive
+            onPress={deleteSet}
+          >
             {t("setDetail.delete")}
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>
-      <Screen>
+      <Screen
+        scrollEventThrottle={100}
+        onScroll={({
+          nativeEvent: { contentOffset, contentSize, layoutMeasurement },
+        }) => {
+          const total =
+            tab === "words" ? visibleWords.length : visibleQuestions.length;
+          if (limit >= total) return;
+          if (
+            contentOffset.y + layoutMeasurement.height >
+            contentSize.height - NEAR_END
+          )
+            setShown({ key: listKey, limit: limit + PAGE });
+        }}
+      >
         <Animated.View entering={swapIn}>
           <Card style={styles.summary}>
             <Text style={styles.summaryText}>
@@ -187,7 +254,9 @@ export default function SetScreen() {
                 icon="play.fill"
                 style={styles.action}
                 disabled={!words.length}
-                onPress={() => router.push({ pathname: "/practice", params: { setId } })}
+                onPress={() =>
+                  router.push({ pathname: "/practice", params: { setId } })
+                }
               />
             </View>
           </Card>
@@ -198,8 +267,14 @@ export default function SetScreen() {
             value={tab}
             onChange={setTab}
             options={[
-              { value: "words", label: `${t("setDetail.wordsTab")} ${words.length}` },
-              { value: "questions", label: `${t("setDetail.questions")} ${questionTotal}` },
+              {
+                value: "words",
+                label: `${t("setDetail.wordsTab")} ${words.length}`,
+              },
+              {
+                value: "questions",
+                label: `${t("setDetail.questions")} ${questionTotal}`,
+              },
               { value: "tools", label: "工具" },
             ]}
           />
@@ -212,11 +287,14 @@ export default function SetScreen() {
                 iconInset={false}
                 footer={
                   needle
-                    ? t("setDetail.wordSearchCount", { count: visibleWords.length, total: words.length })
+                    ? t("setDetail.wordSearchCount", {
+                        count: visibleWords.length,
+                        total: words.length,
+                      })
                     : undefined
                 }
               >
-                {visibleWords.map((entry) => (
+                {visibleWords.slice(0, limit).map((entry) => (
                   <Pressable
                     key={entry.wordKey}
                     accessibilityRole="button"
@@ -227,14 +305,19 @@ export default function SetScreen() {
                         params: { setId, wordKey: entry.wordKey },
                       })
                     }
-                    style={({ pressed }) => [styles.word, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                      styles.word,
+                      pressed && styles.pressed,
+                    ]}
                   >
                     <View style={styles.wordBody}>
                       <Text style={styles.spelling}>{entry.word}</Text>
                       {entry.senses.map((sense) => (
                         <View key={sense.id} style={styles.sense}>
                           <Text style={styles.meaning}>
-                            {sense.pos ? <Text style={styles.pos}>{sense.pos} </Text> : null}
+                            {sense.pos ? (
+                              <Text style={styles.pos}>{sense.pos} </Text>
+                            ) : null}
                             {sense.meaningZh}
                           </Text>
                           {sense.examples[0] ? (
@@ -253,7 +336,11 @@ export default function SetScreen() {
                       onPress={() => speak(entry.word)}
                       style={styles.speak}
                     >
-                      <SymbolView name="speaker.wave.2.fill" size={17} tintColor={colors.brand} />
+                      <SymbolView
+                        name="speaker.wave.2.fill"
+                        size={17}
+                        tintColor={colors.brand}
+                      />
                     </PressableScale>
                   </Pressable>
                 ))}
@@ -269,7 +356,11 @@ export default function SetScreen() {
                 title={t("setDetail.noWords")}
                 body="用上方的「新增單字」加入第一個。"
                 action={
-                  <Button label={t("setEditor.addWord")} icon="plus" onPress={() => openSheet("/sets/[setId]/add")} />
+                  <Button
+                    label={t("setEditor.addWord")}
+                    icon="plus"
+                    onPress={() => openSheet("/sets/[setId]/add")}
+                  />
                 }
               />
             )}
@@ -288,16 +379,24 @@ export default function SetScreen() {
                       : undefined
                   }
                 >
-                  {visibleQuestions.map((question) => (
+                  {visibleQuestions.slice(0, limit).map((question) => (
                     <ListRow
                       key={question.id}
-                      icon={question.kind === "reading" ? "doc.text" : "list.bullet.rectangle"}
+                      icon={
+                        question.kind === "reading"
+                          ? "doc.text"
+                          : "list.bullet.rectangle"
+                      }
                       title={questionText(question)}
                       subtitle={[
                         questionFormatLabel(questionFormat(question)),
                         difficultyLabel(question.difficulty),
                         ...(question.kind === "reading"
-                          ? [t("library.questionCount", { count: question.questions.length })]
+                          ? [
+                              t("library.questionCount", {
+                                count: question.questions.length,
+                              }),
+                            ]
                           : []),
                       ].join(" · ")}
                     />
@@ -305,7 +404,12 @@ export default function SetScreen() {
                 </ListGroup>
                 {!needle ? (
                   <ListGroup>
-                    <ListRow icon="trash" destructive title={t("questions.clearSet")} onPress={clearQuestions} />
+                    <ListRow
+                      icon="trash"
+                      destructive
+                      title={t("questions.clearSet")}
+                      onPress={clearQuestions}
+                    />
                   </ListGroup>
                 ) : null}
               </View>
@@ -341,13 +445,23 @@ export default function SetScreen() {
               />
             </ListGroup>
             <ListGroup>
-              <ListRow icon="link" title={t("setDetail.shareLink")} chevron onPress={() => openSheet("/sets/[setId]/share")} />
+              <ListRow
+                icon="link"
+                title={t("setDetail.shareLink")}
+                chevron
+                onPress={() => openSheet("/sets/[setId]/share")}
+              />
               <ListRow
                 icon="square.and.arrow.up"
                 title={t("setDetail.share")}
                 onPress={sharing ? undefined : () => void downloadShare()}
               />
-              <ListRow icon="trash" destructive title={t("setDetail.delete")} onPress={deleteSet} />
+              <ListRow
+                icon="trash"
+                destructive
+                title={t("setDetail.delete")}
+                onPress={deleteSet}
+              />
             </ListGroup>
           </Animated.View>
         )}
@@ -358,7 +472,11 @@ export default function SetScreen() {
 
 const styles = StyleSheet.create({
   summary: { gap: 14 },
-  summaryText: { ...type.body, color: colors.muted, fontVariant: ["tabular-nums"] },
+  summaryText: {
+    ...type.body,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
+  },
   actions: { flexDirection: "row", gap: 10 },
   action: { flex: 1 },
   stack: { gap: 20 },
