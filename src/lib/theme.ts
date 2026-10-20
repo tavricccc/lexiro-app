@@ -6,50 +6,50 @@ function pair(light: string, dark: string): ColorValue {
 }
 
 /**
- * The look is the 學測 answer card: its orange print, the 2B pencil that
- * fills a bubble, and the white of the sheet. Orange is the one accent; ink
- * is the strong fill; the bubble (a full oval) is the one shape that recurs.
+ * The look is the 學測 answer card in Lexiro green: the 2B pencil that fills a
+ * bubble and the white of the sheet. Green is the one accent; ink is the
+ * strong fill; the bubble (a full oval) is the one shape that recurs.
  */
-export const ORANGE = "#ff6a13";
-export const INK = "#0b0f14";
+export const GREEN = "#7cc49c";
+export const INK = "#13201a";
 
 /** The tint for controls: switches, sliders, the tab bar. */
-export const BRAND_LIGHT = "#f05a06";
-export const BRAND_DARK = "#ff8a3d";
+export const BRAND_LIGHT = "#3f7c5a";
+export const BRAND_DARK = "#8ecdab";
 export const brand = pair(BRAND_LIGHT, BRAND_DARK);
 
 /** Plain values for native options that take a string, not a dynamic color. */
 export const plain = {
-  canvas: { light: "#f1f2f0", dark: "#0b0f13" },
-  foreground: { light: INK, dark: "#f1f2ee" },
+  canvas: { light: "#eaf0ec", dark: "#131d17" },
+  foreground: { light: INK, dark: "#eef4f0" },
 } as const;
 
 /** Surfaces are told apart by a step in tone, not by lines or shadows. */
 export const colors = {
   brand,
   canvas: pair(plain.canvas.light, plain.canvas.dark),
-  card: pair("#ffffff", "#171c22"),
+  card: pair("#ffffff", "#0c130f"),
   foreground: pair(plain.foreground.light, plain.foreground.dark),
-  muted: pair("#535b63", "#a2aab2"),
-  faint: pair("rgba(11,15,20,0.42)", "rgba(241,242,238,0.42)"),
-  // Pencil on paper: ink with orange words; at night the orange takes over.
-  primary: pair(INK, ORANGE),
-  primaryForeground: pair("#ff7a2a", INK),
-  secondary: pair("rgba(11,15,20,0.06)", "rgba(255,255,255,0.08)"),
-  inset: pair("rgba(11,15,20,0.05)", "rgba(255,255,255,0.06)"),
-  pressed: pair("rgba(11,15,20,0.08)", "rgba(255,255,255,0.10)"),
-  separator: pair("rgba(11,15,20,0.12)", "rgba(255,255,255,0.12)"),
-  selected: pair("#e4e6e8", "#262d35"),
-  brandSoft: pair("#ffe6d6", "#3a1e0c"),
+  muted: pair("#4f6157", "#a3b5aa"),
+  faint: pair("rgba(19,32,26,0.42)", "rgba(238,244,240,0.42)"),
+  // Pencil on paper: ink with green words; at night the green takes over.
+  primary: pair(INK, GREEN),
+  primaryForeground: pair("#8ecdab", INK),
+  secondary: pair("rgba(19,32,26,0.06)", "rgba(255,255,255,0.08)"),
+  inset: pair("rgba(19,32,26,0.05)", "rgba(255,255,255,0.06)"),
+  pressed: pair("rgba(19,32,26,0.08)", "rgba(255,255,255,0.10)"),
+  separator: pair("rgba(19,32,26,0.12)", "rgba(255,255,255,0.12)"),
+  selected: pair("#e6f0ea", "#1d3428"),
+  brandSoft: pair("#e3f0e8", "#16261d"),
   destructive: pair("#d22f2f", "#ff7a7a"),
   destructiveSoft: pair("#fde6e4", "#3d1717"),
   success: pair("#10894d", "#4fd18b"),
   successSoft: pair("#dcf3e5", "#0f3020"),
-  // The orange field keeps ink on it in both modes, like the printed card.
-  field: ORANGE,
+  // The green field keeps ink on it in both modes, like the printed card.
+  field: GREEN,
   fieldInk: INK,
-  fieldSoft: "#ffb27f",
-  fieldDeep: "#e25404",
+  fieldSoft: "#c6dfd1",
+  fieldDeep: "#3f7c5a",
 } as const;
 
 export const radius = {
@@ -111,17 +111,17 @@ export const type = {
 export function hexPalette(dark: boolean) {
   return dark
     ? {
-        foreground: "#f1f2ee",
-        muted: "#a2aab2",
+        foreground: "#eef4f0",
+        muted: "#a3b5aa",
         primaryForeground: INK,
-        card: "#171c22",
-        selected: "#262d35",
+        card: "#0c130f",
+        selected: "#1d3428",
       }
     : {
         foreground: INK,
-        muted: "#535b63",
-        primaryForeground: "#ff7a2a",
+        muted: "#4f6157",
+        primaryForeground: "#8ecdab",
         card: "#ffffff",
-        selected: "#e4e6e8",
+        selected: "#e6f0ea",
       };
 }
