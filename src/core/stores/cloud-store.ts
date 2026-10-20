@@ -10,7 +10,10 @@ import {
 } from "@/core/lib/cloud-client";
 import { create } from "zustand";
 
-import { CLOUD_SYNC_PENDING_EVENT } from "@/core/constants";
+import {
+  CLOUD_BLOB_PENDING_EVENT,
+  CLOUD_SYNC_PENDING_EVENT,
+} from "@/core/constants";
 import { flushLibraryMutations, useLibraryStore } from "@/core/stores/library-store";
 import { applyCloudRecords } from "@/core/lib/cloud-records";
 import { serializeAccountDataAction } from "@/core/lib/account-data-queue";
@@ -91,6 +94,27 @@ interface CloudStore {
 const SYNC_DEBOUNCE_MS = 3_000;
 const SYNC_MAX_DELAY_MS = 15_000;
 /**
+ * A practice session marks its snapshot on every answer, yet another device
+ * only needs it to resume. It waits longer, and leaving the page still sends
+ * it straight away.
+ */
+const BLOB_SYNC_DEBOUNCE_MS = 30_000;
+const BLOB_SYNC_MAX_DELAY_MS = 60_000;
+/**
+ * Whether the cloud's records may have moved since the last pull. A sync with
+ * nothing of its own to push skips the pull while this is false; the status
+ * poller, going online and switching accounts set it again.
+ */
+let libraryMayHaveChanged = true;
+/** The same for the account documents: whether a write needs a read first. */
+let accountMayHaveChanged = true;
+
+/** Forgets what this session learned about the cloud, as a fresh start would. */
+export function resetCloudChangeHints(): void {
+  libraryMayHaveChanged = accountMayHaveChanged = true;
+  accountDocumentsRead = "";
+}
+/**
  * The account whose progress and statistics documents this session has read.
  *
  * Every sync used to read both, which meant two documents for every notification
@@ -111,8 +135,10 @@ let running: Promise<void> | null = null;
 let rerun = false;
 let rerunReconcile = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-/** When the oldest change still waiting in the debounce arrived. */
-let debounceOpenedAt = 0;
+/** The latest moment the waiting changes may be held, set by the oldest. */
+let debounceDeadline = 0;
+/** The shortest quiet period any waiting change asked for. */
+let debounceQuiet = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryAttempt = 0;
 let unwatch: (() => void) | null = null;
@@ -120,7 +146,8 @@ let unwatch: (() => void) | null = null;
 function clearDebounce(): void {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = null;
-  debounceOpenedAt = 0;
+  debounceDeadline = 0;
+  debounceQuiet = 0;
 }
 
 function errorMessage(reason: unknown): string {
@@ -144,6 +171,7 @@ const enterNamespace = serializeAccountDataAction(
     await flushLibraryMutations();
     setStorageNamespace(namespace);
     accountDocumentsRead = "";
+    libraryMayHaveChanged = accountMayHaveChanged = true;
     resetSyncJournalCache();
     await useLibraryStore.getState().reloadNamespace();
     const libraryError = useLibraryStore.getState().error;
@@ -169,25 +197,23 @@ export const useCloudStore = create<CloudStore>((set, get) => ({
           status: "error",
           error: reason instanceof Error ? reason.message : String(reason),
         });
-      const scheduleSync = () => {
+      const scheduleSync = (quietMs: number, maxDelayMs: number) => {
         void refreshPending(set);
         if (!get().user) return;
         const now = Date.now();
-        if (!debounceTimer) debounceOpenedAt = now;
+        debounceDeadline = debounceTimer
+          ? Math.min(debounceDeadline, now + maxDelayMs)
+          : now + maxDelayMs;
+        debounceQuiet = debounceTimer
+          ? Math.min(debounceQuiet, quietMs)
+          : quietMs;
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(
           () => {
-            debounceTimer = null;
-            debounceOpenedAt = 0;
+            clearDebounce();
             void get().sync();
           },
-          Math.max(
-            0,
-            Math.min(
-              SYNC_DEBOUNCE_MS,
-              debounceOpenedAt + SYNC_MAX_DELAY_MS - now,
-            ),
-          ),
+          Math.max(0, Math.min(debounceQuiet, debounceDeadline - now)),
         );
       };
       // Leaving the page must not leave work sitting in the debounce. The
@@ -199,12 +225,18 @@ export const useCloudStore = create<CloudStore>((set, get) => ({
         void get().sync();
       };
       if (typeof window !== "undefined") {
-        window.addEventListener(CLOUD_SYNC_PENDING_EVENT, scheduleSync);
+        window.addEventListener(CLOUD_SYNC_PENDING_EVENT, () =>
+          scheduleSync(SYNC_DEBOUNCE_MS, SYNC_MAX_DELAY_MS),
+        );
+        window.addEventListener(CLOUD_BLOB_PENDING_EVENT, () =>
+          scheduleSync(BLOB_SYNC_DEBOUNCE_MS, BLOB_SYNC_MAX_DELAY_MS),
+        );
         window.addEventListener("pagehide", flushSync);
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") flushSync();
         });
         window.addEventListener("online", () => {
+          libraryMayHaveChanged = accountMayHaveChanged = true;
           if (get().user) void get().sync();
         });
         window.addEventListener("offline", () => {
@@ -258,6 +290,9 @@ export const useCloudStore = create<CloudStore>((set, get) => ({
               db,
               user.uid,
               (changedBy, accountChanged) => {
+                if (!accountChanged || changedBy !== undefined)
+                  libraryMayHaveChanged = true;
+                if (accountChanged) accountMayHaveChanged = true;
                 void get().sync({
                   reconcileAccount:
                     accountChanged || changedBy?.startsWith("agent:"),
@@ -350,7 +385,36 @@ async function reconcileAccountDocuments(
   db: CloudClient,
   uid: string,
   dirtyBlobs: { preferences: number; practice: number },
+  reconcileAccount: boolean,
 ): Promise<void> {
+  const clearSent = () =>
+    writeSyncForAccount(uid, () =>
+      clearBlobDirty([
+        { kind: "preferences", version: dirtyBlobs.preferences },
+        { kind: "practice", version: dirtyBlobs.practice },
+      ]),
+    );
+  // Nothing suggests the cloud copy moved since this device last read it, so
+  // the local session goes straight up. The write is a compare-and-swap on the
+  // blob revision: if another device did write, it fails and the read below
+  // settles which session wins.
+  const localDraft = localPracticeDraft();
+  if (
+    accountDocumentsRead === uid &&
+    !accountMayHaveChanged &&
+    !reconcileAccount &&
+    dirtyBlobs.practice > 0 &&
+    localDraft
+  ) {
+    try {
+      await writeCloudBlob(db, uid, "practice", localDraft);
+      await clearSent();
+      return;
+    } catch (reason) {
+      if ((reason as { code?: string }).code !== "aborted") throw reason;
+    }
+  }
+  accountMayHaveChanged = false;
   const blobs = await readCloudBlobs(db, uid);
   if (
     getStorageNamespace() !== accountNamespace(uid) ||
@@ -372,12 +436,7 @@ async function reconcileAccountDocuments(
     work.push(() => writeCloudBlob(db, uid, "practice", localPractice));
   for (const write of work) await write();
   if (getStorageNamespace() !== accountNamespace(uid)) return;
-  await writeSyncForAccount(uid, () =>
-    clearBlobDirty([
-      { kind: "preferences", version: dirtyBlobs.preferences },
-      { kind: "practice", version: dirtyBlobs.practice },
-    ]),
-  );
+  await clearSent();
 }
 
 async function runSync(
@@ -416,28 +475,37 @@ async function runSync(
     // still marked dirty when the cloud copy arrives, so the local edit is held
     // back from the merge and then pushed, rather than being overwritten by an
     // older copy that merely reached the server first.
-    const pulled = await pullRecords(db, user.uid, journal.cursor);
-    if (!sameAccount()) return;
-    if (pulled.records.length) {
-      await useLibraryStore.getState().applyRemoteState(async (current) => {
-        if (!sameAccount()) return null;
-        const latestJournal = await loadSyncJournal();
-        return applyCloudRecords(
-          current,
-          pulled.records,
-          new Set([
-            ...Object.keys(latestJournal.dirty),
-            ...Object.keys(latestJournal.tombstones),
-          ]),
-        );
-      });
+    const localRecords =
+      Object.keys(journal.dirty).length +
+      Object.keys(journal.tombstones).length;
+    if (reconcileAccount || libraryMayHaveChanged || localRecords) {
+      // Cleared before the request, so a change reported meanwhile stands.
+      libraryMayHaveChanged = false;
+      const pulled = await pullRecords(db, user.uid, journal.cursor);
+      if (!sameAccount()) return;
+      if (pulled.records.length) {
+        await useLibraryStore.getState().applyRemoteState(async (current) => {
+          if (!sameAccount()) return null;
+          const latestJournal = await loadSyncJournal();
+          return applyCloudRecords(
+            current,
+            pulled.records,
+            new Set([
+              ...Object.keys(latestJournal.dirty),
+              ...Object.keys(latestJournal.tombstones),
+            ]),
+          );
+        });
+      }
+      if (!sameAccount()) return;
+      if (
+        pulled.cursor !== journal.cursor &&
+        !(await writeSyncForAccount(user.uid, () =>
+          setSyncCursor(pulled.cursor),
+        ))
+      )
+        return;
     }
-    if (!sameAccount()) return;
-    if (
-      pulled.cursor !== journal.cursor &&
-      !(await writeSyncForAccount(user.uid, () => setSyncCursor(pulled.cursor)))
-    )
-      return;
 
     if (
       reconcileAccount ||
@@ -445,7 +513,12 @@ async function runSync(
       dirtyBlobs.preferences > 0 ||
       dirtyBlobs.practice > 0
     )
-      await reconcileAccountDocuments(db, user.uid, dirtyBlobs);
+      await reconcileAccountDocuments(
+        db,
+        user.uid,
+        dirtyBlobs,
+        reconcileAccount,
+      );
     if (!sameAccount()) return;
 
     // Push after the merge, so what goes up is the reconciled value rather than
@@ -471,6 +544,8 @@ async function runSync(
     await refreshPending(set);
     set({ ready: true, status: "synced", error: "" });
   } catch (reason) {
+    // A failed run proves nothing about the cloud; the next one checks again.
+    libraryMayHaveChanged = accountMayHaveChanged = true;
     if (!sameAccount()) return;
     await refreshPending(set);
     set({

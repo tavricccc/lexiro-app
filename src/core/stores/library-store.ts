@@ -147,6 +147,32 @@ function folderDescendants(
   return ids;
 }
 
+/**
+ * Saving a set rebuilds every word in it. Words that came out the same keep
+ * their original object and updatedAt, so sync only uploads what changed
+ * instead of the whole set on every save.
+ */
+function keepUnchangedWords(
+  before: Record<WordKey, WordEntry>,
+  after: Record<WordKey, WordEntry>,
+  timestamp: string,
+): Record<WordKey, WordEntry> {
+  const content = (word: WordEntry) =>
+    JSON.stringify({ ...word, updatedAt: "" });
+  return Object.fromEntries(
+    Object.entries(after).map(([wordKey, word]) => {
+      const previous = before[wordKey as WordKey];
+      if (!previous) return [wordKey, word];
+      return [
+        wordKey,
+        content(previous) === content(word)
+          ? previous
+          : { ...word, updatedAt: timestamp },
+      ];
+    }),
+  ) as Record<WordKey, WordEntry>;
+}
+
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
   state: emptyLibraryState(),
   status: "idle",
@@ -390,7 +416,11 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
         ...get().state.memberships,
         [setId]: memberships,
       };
-      const prunedWords = pruneWordsToMemberships(words, nextMemberships);
+      const prunedWords = keepUnchangedWords(
+        get().state.words,
+        pruneWordsToMemberships(words, nextMemberships),
+        timestamp,
+      );
       const state: LibraryState = {
         ...get().state,
         words: prunedWords,

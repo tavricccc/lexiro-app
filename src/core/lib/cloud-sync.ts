@@ -133,7 +133,13 @@ interface CloudStatus {
   changedBy: string;
   blobChangedBy: string;
 }
-/** One indexed status row per visible/online poll; records are pulled only when changed. */
+/** How often a focused, visible device asks whether the cloud changed. */
+export const CLOUD_STATUS_POLL_MS = 60_000;
+/**
+ * One indexed status row per poll from the focused, visible device; records
+ * are pulled only when changed. Background tabs stay quiet, so several open
+ * tabs cost one poller, and coming back to a tab wakes it straight away.
+ */
 export function watchCloudChanges(
   client: CloudClient,
   uid: string,
@@ -148,7 +154,8 @@ export function watchCloudChanges(
       running ||
       client.uid !== uid ||
       (typeof document !== "undefined" &&
-        document.visibilityState === "hidden") ||
+        (document.visibilityState === "hidden" ||
+          document.hasFocus?.() === false)) ||
       (typeof navigator !== "undefined" && !navigator.onLine)
     )
       return;
@@ -176,10 +183,11 @@ export function watchCloudChanges(
   const wake = () => {
     void poll();
   };
-  const timer = setInterval(wake, 30000);
+  // Going online runs a full sync from the cloud store, so it needs no poll.
+  const timer = setInterval(wake, CLOUD_STATUS_POLL_MS);
   if (typeof document !== "undefined")
     document.addEventListener("visibilitychange", wake);
-  if (typeof window !== "undefined") window.addEventListener("online", wake);
+  if (typeof window !== "undefined") window.addEventListener("focus", wake);
   wake();
   return () => {
     stopped = true;
@@ -187,6 +195,6 @@ export function watchCloudChanges(
     if (typeof document !== "undefined")
       document.removeEventListener("visibilitychange", wake);
     if (typeof window !== "undefined")
-      window.removeEventListener("online", wake);
+      window.removeEventListener("focus", wake);
   };
 }

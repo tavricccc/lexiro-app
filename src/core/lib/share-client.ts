@@ -40,8 +40,11 @@ export async function findSetShareLink(
  * an edit that only lives on this device would show them an older copy.
  */
 export async function createSetShareLink(setId: string): Promise<SetShareLink> {
-  const uid = useCloudStore.getState().user?.uid;
-  await useCloudStore.getState().sync();
+  const before = useCloudStore.getState();
+  const uid = before.user?.uid;
+  // Already in the cloud: a sync here would only repeat a pull and a push.
+  if (before.status !== "synced" || before.pending > 0)
+    await useCloudStore.getState().sync();
   const cloud = useCloudStore.getState();
   if (cloud.user?.uid !== uid) throw new Error(t("agent.accountChanged"));
   if (cloud.status !== "synced" || cloud.pending > 0)
