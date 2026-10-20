@@ -28,7 +28,7 @@ import { usePracticeSessionActions } from "@/core/components/practice/use-practi
 import { t } from "@/core/lib/i18n";
 import type { SenseId } from "@/core/types";
 import { speak } from "@/lib/speech";
-import { colors, space, type } from "@/lib/theme";
+import { colors, latin, space, type } from "@/lib/theme";
 
 /** The sheet slides up first; the session is drawn once it is in place. */
 export default function SessionScreen() {
@@ -411,7 +411,12 @@ const styles = StyleSheet.create({
   },
   roundActive: { backgroundColor: colors.brandSoft },
   progress: { flex: 1 },
-  counter: { ...type.hint, color: colors.muted, fontVariant: ["tabular-nums"] },
+  counter: {
+    ...latin.bold,
+    fontSize: 17,
+    color: colors.foreground,
+    fontVariant: ["tabular-nums"],
+  },
   reviewing: {
     ...type.hint,
     fontWeight: "600",

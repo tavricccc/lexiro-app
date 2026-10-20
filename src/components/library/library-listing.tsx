@@ -1,6 +1,7 @@
 import { router, Stack } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert } from "react-native";
+import { SymbolView } from "expo-symbols";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 import {
@@ -11,7 +12,7 @@ import { parseShareId } from "@/components/library/share-id";
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
-import { ListGroup, ListRow } from "@/components/ui/list";
+import { PressableScale } from "@/components/ui/pressable-scale";
 import { glide, swapIn } from "@/components/ui/motion";
 import {
   ALL_FOLDER_ID,
@@ -25,7 +26,7 @@ import { setMatchesQuery } from "@/core/lib/library-search";
 import { copySharedSet } from "@/core/lib/set-share";
 import { createUniqueSetName } from "@/core/lib/set-name";
 import { useLibraryStore } from "@/core/stores/library-store";
-import { colors } from "@/lib/theme";
+import { colors, isLatin, latin, radius, type } from "@/lib/theme";
 import { pickSetShareFile } from "@/platform/set-share-files";
 import { toast } from "@/platform/toast";
 
@@ -310,23 +311,18 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             body={t("setDetail.missingDescription")}
           />
         ) : status !== "ready" ? null : !listEmpty ? (
-          <Animated.View entering={swapIn} layout={glide}>
-            <ListGroup>
-              {[
-                ...(needle ? [] : childFolders).map((folder) => (
-                  <ListRow
+          <Animated.View entering={swapIn} layout={glide} style={styles.listing}>
+            {!needle && childFolders.length ? (
+              <View style={styles.folders}>
+                {childFolders.map((folder) => (
+                  <FolderPill
                     key={folder.id}
-                    icon="folder.fill"
-                    iconTint={colors.success}
-                    title={folder.name}
-                    subtitle={t("library.itemCount", {
-                      count: countDirectItems(
-                        state.folders,
-                        state.sets,
-                        folder.id,
-                      ),
-                    })}
-                    chevron
+                    name={folder.name}
+                    count={countDirectItems(
+                      state.folders,
+                      state.sets,
+                      folder.id,
+                    )}
                     onPress={() =>
                       router.push({
                         pathname: "/library/folder/[folderId]",
@@ -334,26 +330,20 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
                       })
                     }
                   />
-                )),
-                ...sets.map((entry) => {
+                ))}
+              </View>
+            ) : null}
+            {sets.length ? (
+              <View style={styles.sets}>
+                {sets.map((entry) => {
                   const { senseCount, questionCount } =
                     metrics.get(entry.id) ?? NO_METRICS;
                   return (
-                    <ListRow
+                    <SetRow
                       key={entry.id}
-                      icon="rectangle.stack"
-                      title={entry.setName}
-                      subtitle={[
-                        t("library.senseCount", { count: senseCount }),
-                        ...(questionCount
-                          ? [
-                              t("library.questionCount", {
-                                count: questionCount,
-                              }),
-                            ]
-                          : []),
-                      ].join(" · ")}
-                      chevron
+                      name={entry.setName}
+                      senses={senseCount}
+                      questions={questionCount}
                       onPress={() =>
                         router.push({
                           pathname: "/library/[setId]",
@@ -362,9 +352,9 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
                       }
                     />
                   );
-                }),
-              ]}
-            </ListGroup>
+                })}
+              </View>
+            ) : null}
           </Animated.View>
         ) : needle ? (
           <EmptyState
@@ -395,3 +385,114 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
     </>
   );
 }
+
+/** A folder as an oval on the answer card: its name and how much is in it. */
+function FolderPill({
+  name,
+  count,
+  onPress,
+}: {
+  name: string;
+  count: number;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={`${name}，${t("library.itemCount", { count })}`}
+      onPress={onPress}
+      style={styles.folder}
+    >
+      <SymbolView name="folder.fill" size={17} tintColor={colors.brand} />
+      <Text style={styles.folderName} numberOfLines={1}>
+        {name}
+      </Text>
+      <Text style={styles.folderCount}>{count}</Text>
+    </PressableScale>
+  );
+}
+
+/** A set, led by its name, with its size set large on the right. */
+function SetRow({
+  name,
+  senses,
+  questions,
+  onPress,
+}: {
+  name: string;
+  senses: number;
+  questions: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.set, pressed && styles.setPressed]}
+    >
+      <View style={styles.setText}>
+        <Text
+          style={[styles.setName, isLatin(name) && styles.setNameLatin]}
+          numberOfLines={2}
+        >
+          {name}
+        </Text>
+        <Text style={styles.setMeta}>
+          {questions
+            ? t("library.questionCount", { count: questions })
+            : "還沒有題目"}
+        </Text>
+      </View>
+      <View style={styles.setSize}>
+        <Text style={styles.setCount}>{senses}</Text>
+        <Text style={styles.setUnit}>詞義</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  listing: { gap: 20 },
+  folders: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  folder: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    maxWidth: "100%",
+    minHeight: 44,
+    paddingLeft: 16,
+    paddingRight: 18,
+    borderRadius: radius.bubble,
+    backgroundColor: colors.card,
+  },
+  folderName: { fontSize: 16, fontWeight: "600", color: colors.foreground, flexShrink: 1 },
+  folderCount: { ...latin.bold, fontSize: 16, color: colors.muted },
+  sets: { gap: 8 },
+  set: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    minHeight: 84,
+    paddingVertical: 16,
+    paddingLeft: 20,
+    paddingRight: 18,
+    borderRadius: radius.card,
+    borderCurve: "continuous",
+    backgroundColor: colors.card,
+  },
+  setPressed: { backgroundColor: colors.selected },
+  setText: { flex: 1, gap: 4 },
+  setName: { fontSize: 20, lineHeight: 26, fontWeight: "800", color: colors.foreground },
+  setNameLatin: { ...latin.heavy, fontWeight: undefined, fontSize: 22, letterSpacing: -0.5 },
+  setMeta: { ...type.hint, color: colors.muted },
+  setSize: { alignItems: "flex-end" },
+  setCount: {
+    ...latin.heavy,
+    fontSize: 34,
+    lineHeight: 36,
+    letterSpacing: -1,
+    color: colors.brand,
+    fontVariant: ["tabular-nums"],
+  },
+  setUnit: { ...type.hint, color: colors.muted },
+});

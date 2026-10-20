@@ -7,7 +7,7 @@ import Animated from "react-native-reanimated";
 import { setFolderOptions } from "@/components/library/folder-options";
 import { confirmDeleteQuestion } from "@/components/questions/delete-question";
 import { Button } from "@/components/ui/button";
-import { Card, EmptyState, Screen } from "@/components/ui/layout";
+import { EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -28,7 +28,7 @@ import { useLibraryStore } from "@/core/stores/library-store";
 import type { LibraryQuestion } from "@/core/types";
 import { senseCount, setWords } from "@/lexiro/library";
 import { speak } from "@/lib/speech";
-import { colors, space, type } from "@/lib/theme";
+import { colors, latin, radius, space, type } from "@/lib/theme";
 import { shareSetShareFile } from "@/platform/set-share-files";
 import { toast } from "@/platform/toast";
 
@@ -240,21 +240,24 @@ export default function SetScreen() {
         }}
       >
         <Animated.View entering={swapIn}>
-          <Card style={styles.summary}>
-            <Text style={styles.summaryText}>
-              {t("setDetail.summary", { senses, questions: questionTotal })}
-            </Text>
+          <View style={styles.summary}>
+            <View style={styles.summaryBubble} />
+            <View style={styles.figures}>
+              <Figure value={senses} label="詞義" />
+              <Figure value={questionTotal} label="題目" />
+            </View>
             <View style={styles.actions}>
               <Button
                 label={t("setEditor.addWord")}
                 icon="plus"
-                variant="ghost"
+                variant="onField"
                 style={styles.action}
                 onPress={() => openSheet("/sets/[setId]/add")}
               />
               <Button
                 label="開始練習"
                 icon="play.fill"
+                variant="ink"
                 style={styles.action}
                 disabled={!words.length}
                 onPress={() =>
@@ -262,7 +265,7 @@ export default function SetScreen() {
                 }
               />
             </View>
-          </Card>
+          </View>
         </Animated.View>
 
         <Animated.View entering={swapIn}>
@@ -342,7 +345,7 @@ export default function SetScreen() {
                       <SymbolView
                         name="speaker.wave.2.fill"
                         size={17}
-                        tintColor={colors.brand}
+                        tintColor={colors.fieldInk}
                       />
                     </PressableScale>
                   </Pressable>
@@ -401,7 +404,7 @@ export default function SetScreen() {
                     >
                       <View style={styles.wordBody}>
                         <Text style={styles.questionMeta}>
-                          <Text style={styles.pos}>
+                          <Text style={styles.format}>
                             {questionFormatLabel(questionFormat(question))}
                           </Text>
                           {[
@@ -501,13 +504,45 @@ export default function SetScreen() {
   );
 }
 
+/** One of the set's sizes, at poster size on the orange. */
+function Figure({ value, label }: { value: number; label: string }) {
+  return (
+    <View>
+      <Text style={styles.figureValue}>{value}</Text>
+      <Text style={styles.figureLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  summary: { gap: 14 },
-  summaryText: {
-    ...type.body,
-    color: colors.muted,
+  // The set's size on the answer card's orange, with the way in.
+  summary: {
+    overflow: "hidden",
+    gap: 18,
+    padding: 22,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
+  summaryBubble: {
+    position: "absolute",
+    top: -56,
+    right: -84,
+    width: 180,
+    height: 120,
+    borderRadius: 999,
+    backgroundColor: colors.fieldInk,
+  },
+  figures: { flexDirection: "row", gap: 32 },
+  figureValue: {
+    ...latin.heavy,
+    fontSize: 56,
+    lineHeight: 58,
+    letterSpacing: -2.5,
+    color: colors.fieldInk,
     fontVariant: ["tabular-nums"],
   },
+  figureLabel: { ...type.section, color: colors.fieldInk },
   actions: { flexDirection: "row", gap: 10 },
   action: { flex: 1 },
   stack: { gap: 20 },
@@ -520,10 +555,16 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.secondary },
   wordBody: { flex: 1, gap: 4 },
-  spelling: { fontSize: 19, fontWeight: "600", color: colors.foreground },
+  spelling: {
+    ...latin.bold,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    color: colors.foreground,
+  },
   sense: { gap: 1 },
   meaning: { ...type.body, color: colors.foreground },
-  pos: { color: colors.brand, fontStyle: "italic" },
+  pos: { ...latin.semibold, color: colors.brand },
+  format: { color: colors.brand, fontWeight: "600" },
   example: { ...type.hint, color: colors.muted },
   questionMeta: { ...type.hint, color: colors.muted },
   questionTitle: {
@@ -532,12 +573,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.foreground,
   },
+  // A bubble in the card's orange.
   speak: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 50,
+    height: 34,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.field,
   },
 });

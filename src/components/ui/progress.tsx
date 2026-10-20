@@ -42,6 +42,7 @@ export function ProgressBar({
 }
 
 const styles = StyleSheet.create({
-  track: { height: 8, borderRadius: 4, overflow: "hidden" },
-  fill: { height: 8, borderRadius: 4 },
+  // A long bubble filling in from the left.
+  track: { height: 12, borderRadius: 999, overflow: "hidden" },
+  fill: { height: 12, borderRadius: 999 },
 });

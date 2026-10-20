@@ -1,11 +1,9 @@
-import { Image } from "expo-image";
 import { useState, type ReactNode } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   type ScrollViewProps,
   type ViewStyle,
 } from "react-native";
@@ -13,10 +11,9 @@ import {
 import Animated, { LayoutAnimationConfig } from "react-native-reanimated";
 
 import { colors, radius, space, type } from "@/lib/theme";
+import { Bubble } from "./bubble";
 import { swapIn } from "./motion";
 import { useTransitionDone } from "./use-transition-done";
-
-const reading = require("../../../assets/illustrations/reading.svg");
 
 /**
  * A scrolling page on the canvas, under the native large title. The body
@@ -47,17 +44,14 @@ export function Card({ children, style }: { children: ReactNode; style?: ViewSty
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-/** The Open Doodles reader, tinted with the text color as on the web app. */
-export function Illustration({ size = 132 }: { size?: number }) {
-  const dark = useColorScheme() === "dark";
+/** Three bubbles of the answer card, the first filled in: the app's mark. */
+export function BubbleMark({ size = 30 }: { size?: number }) {
   return (
-    <Image
-      source={reading}
-      tintColor={dark ? "#eef4f0" : "#13201a"}
-      contentFit="contain"
-      style={{ width: size, height: (size * 3) / 4 }}
-      accessible={false}
-    />
+    <View style={styles.mark} accessible={false}>
+      <Bubble letter="A" state="filled" size={size} />
+      <Bubble letter="B" size={size} />
+      <Bubble letter="C" size={size} />
+    </View>
   );
 }
 
@@ -74,7 +68,7 @@ export function EmptyState({
 }) {
   return (
     <Card style={styles.empty}>
-      {illustrated ? <Illustration size={180} /> : null}
+      {illustrated ? <BubbleMark /> : null}
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
       {action ? <View style={styles.emptyAction}>{action}</View> : null}
@@ -92,8 +86,9 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     padding: space.row,
   },
-  empty: { alignItems: "center", gap: 10, paddingVertical: 32 },
-  emptyTitle: { ...type.title, color: colors.foreground, textAlign: "center", marginTop: 6 },
-  emptyBody: { ...type.body, color: colors.muted, textAlign: "center", maxWidth: 300 },
+  mark: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  empty: { gap: 8, padding: 24, paddingVertical: 28 },
+  emptyTitle: { ...type.title, color: colors.foreground },
+  emptyBody: { ...type.body, color: colors.muted },
   emptyAction: { alignSelf: "stretch", marginTop: 10 },
 });

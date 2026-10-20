@@ -22,7 +22,7 @@ import {
 import { t } from "@/core/lib/i18n";
 import { practiceTaskLabel } from "@/core/lib/practice-tasks";
 import { speak } from "@/lib/speech";
-import { colors, type } from "@/lib/theme";
+import { colors, isLatin, latin, type } from "@/lib/theme";
 
 export type AnsweredBlanks = Record<number, { answer: string }>;
 
@@ -116,7 +116,9 @@ export function QuestionView({
                   wordTask
                     ? [
                         styles.wordPrompt,
-                        item.type === "reverse" && styles.wordPromptZh,
+                        isLatin(item.prompt)
+                          ? styles.wordPromptLatin
+                          : styles.wordPromptZh,
                       ]
                     : styles.prompt
                 }
@@ -137,7 +139,7 @@ export function QuestionView({
                   <SymbolView
                     name="speaker.wave.2.fill"
                     size={18}
-                    tintColor={colors.brand}
+                    tintColor={colors.fieldInk}
                   />
                 </PressableScale>
               ) : null}
@@ -293,7 +295,7 @@ const styles = StyleSheet.create({
   passage: { gap: 12 },
   passageTitle: { ...type.section, color: colors.foreground },
   head: { gap: 14 },
-  task: { ...type.hint, fontWeight: "600", color: colors.brand, marginTop: 8 },
+  task: { ...type.section, fontSize: 15, color: colors.muted, marginTop: 8 },
   promptRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   wordPrompt: {
     fontSize: 42,
@@ -301,6 +303,14 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.foreground,
     flexShrink: 1,
+  },
+  // The word being learnt, at poster size in the Latin face.
+  wordPromptLatin: {
+    ...latin.heavy,
+    fontWeight: undefined,
+    fontSize: 54,
+    lineHeight: 60,
+    letterSpacing: -2,
   },
   wordPromptZh: { fontSize: 30, letterSpacing: -0.4 },
   prompt: {
@@ -310,13 +320,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.foreground,
   },
+  // A bubble in the card's orange.
   speak: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 56,
+    height: 38,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.brandSoft,
+    backgroundColor: colors.field,
   },
   hint: { ...type.hint, color: colors.muted },
   options: { gap: 10 },
