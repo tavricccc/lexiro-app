@@ -103,6 +103,20 @@ if (typeof g.structuredClone !== "function")
   g.structuredClone = (value: unknown) =>
     value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 
+// Hermes lacks the ES2023 copying array methods the shared code uses.
+const arrays = Array.prototype as unknown as Record<string, unknown>;
+const define = (name: string, value: unknown) =>
+  // eslint-disable-next-line no-extend-native -- a polyfill, only when missing
+  Object.defineProperty(Array.prototype, name, { value, writable: true, configurable: true });
+if (typeof arrays.toSorted !== "function")
+  define("toSorted", function (this: unknown[], compare?: (a: unknown, b: unknown) => number) {
+    return [...this].sort(compare);
+  });
+if (typeof arrays.toReversed !== "function")
+  define("toReversed", function (this: unknown[]) {
+    return [...this].reverse();
+  });
+
 // Next.js inlines these at build time; here they are set before first use.
 Object.assign(process.env, {
   NEXT_PUBLIC_AGENT_WORKER_URL: AGENT_WORKER_URL,
