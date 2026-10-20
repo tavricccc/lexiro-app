@@ -5,7 +5,7 @@ import { brand } from "@/lib/theme";
 // The web app's four destinations, in its order.
 export default function TabLayout() {
   return (
-    <NativeTabs tintColor={brand} minimizeBehavior="onScrollDown">
+    <NativeTabs tintColor={brand} minimizeBehavior="never">
       <NativeTabs.Trigger name="today">
         <NativeTabs.Trigger.Label>今天</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "sun.horizon", selected: "sun.horizon.fill" }} />
