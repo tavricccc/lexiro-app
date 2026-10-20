@@ -52,7 +52,10 @@ export function ListGroup({
           <Fragment key={row.key ?? index}>
             {index ? (
               <View
-                style={[styles.separator, { marginLeft: iconInset ? ICON_INSET : space.row }]}
+                style={[
+                  styles.separator,
+                  { marginLeft: iconInset ? ICON_INSET : space.row },
+                ]}
               />
             ) : null}
             {row}
@@ -99,7 +102,9 @@ export function ListRow({
         <SymbolView
           name={icon}
           size={22}
-          tintColor={destructive ? colors.destructive : (iconTint ?? colors.brand)}
+          tintColor={
+            destructive ? colors.destructive : (iconTint ?? colors.brand)
+          }
           style={styles.icon}
         />
       ) : null}
@@ -119,7 +124,12 @@ export function ListRow({
       {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       {accessory}
       {chevron ? (
-        <SymbolView name="chevron.right" size={13} weight="semibold" tintColor={colors.faint} />
+        <SymbolView
+          name="chevron.right"
+          size={13}
+          weight="semibold"
+          tintColor={colors.faint}
+        />
       ) : null}
     </Pressable>
   );
@@ -130,13 +140,17 @@ export function CheckRow({
   title,
   subtitle,
   icon,
+  detail,
   checked,
+  disabled,
   onPress,
 }: {
   title: string;
   subtitle?: string;
   icon?: SymbolViewProps["name"];
+  detail?: string;
   checked: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   return (
@@ -144,10 +158,15 @@ export function CheckRow({
       title={title}
       subtitle={subtitle}
       icon={icon}
-      onPress={() => {
-        if (!checked) void Haptics.selectionAsync();
-        onPress();
-      }}
+      detail={detail}
+      onPress={
+        disabled
+          ? undefined
+          : () => {
+              if (!checked) void Haptics.selectionAsync();
+              onPress();
+            }
+      }
       accessory={
         <View style={styles.check}>
           {checked ? (
@@ -155,7 +174,12 @@ export function CheckRow({
               entering={ZoomIn.springify().damping(14)}
               exiting={ZoomOut.duration(120)}
             >
-              <SymbolView name="checkmark" size={17} weight="bold" tintColor={colors.brand} />
+              <SymbolView
+                name="checkmark"
+                size={17}
+                weight="bold"
+                tintColor={colors.brand}
+              />
             </Animated.View>
           ) : null}
         </View>
@@ -218,7 +242,11 @@ export function InputRow({
 }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.inputLabel, invalid && { color: colors.destructive }]}>{label}</Text>
+      <Text
+        style={[styles.inputLabel, invalid && { color: colors.destructive }]}
+      >
+        {label}
+      </Text>
       <TextInput
         accessibilityLabel={label}
         autoCapitalize={autoCapitalize}
@@ -264,7 +292,11 @@ export function TextBlockRow({
             hitSlop={10}
             onPress={onRemove}
           >
-            <SymbolView name="minus.circle.fill" size={20} tintColor={colors.destructive} />
+            <SymbolView
+              name="minus.circle.fill"
+              size={20}
+              tintColor={colors.destructive}
+            />
           </Pressable>
         ) : null}
       </View>
@@ -304,7 +336,11 @@ export function ActionRow({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
       <SymbolView
         name={icon ?? (destructive ? "minus.circle" : "plus.circle")}
@@ -383,7 +419,10 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     overflow: "hidden",
   },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.separator,
+  },
   footer: { ...type.hint, color: colors.muted, paddingHorizontal: 4 },
   row: {
     flexDirection: "row",
@@ -402,9 +441,24 @@ const styles = StyleSheet.create({
   check: { width: 22, alignItems: "center" },
   disabled: { opacity: 0.4 },
   inputLabel: { ...type.row, color: colors.foreground, width: 92 },
-  input: { ...type.row, flex: 1, color: colors.foreground, textAlign: "right", paddingVertical: 4 },
+  input: {
+    ...type.row,
+    flex: 1,
+    color: colors.foreground,
+    textAlign: "right",
+    paddingVertical: 4,
+  },
   block: { gap: 4, paddingHorizontal: space.row, paddingVertical: 12 },
-  blockHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  blockHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   blockLabel: { ...type.hint, color: colors.muted },
-  blockInput: { ...type.body, color: colors.foreground, minHeight: 24, paddingVertical: 2 },
+  blockInput: {
+    ...type.body,
+    color: colors.foreground,
+    minHeight: 24,
+    paddingVertical: 2,
+  },
 });
