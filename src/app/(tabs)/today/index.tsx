@@ -13,36 +13,47 @@ import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, type } from "@/lib/theme";
 
 const STEPS = [
-  { title: "加入想記住的單字", body: "手動輸入，或貼一串字讓 AI 整理成詞義。" },
-  { title: "讓 AI 出題", body: "用你自己的字產生學測型式的題目。" },
+  {
+    title: "加入想記住的單字",
+    body: "手動輸入，或請連上 MCP 的 AI 助理幫你整理成詞義。",
+  },
+  {
+    title: "讓 AI 出題",
+    body: "透過 MCP 請 AI 助理用你自己的字出學測型式的題目。",
+  },
   {
     title: "練一輪、找朋友比",
     body: "自己選題型練習，答錯的題目可以馬上重練；也能開房間和朋友即時對戰。",
   },
 ];
 
-const openSet = (setId: string) => router.push({ pathname: "/library/[setId]", params: { setId } });
+const openSet = (setId: string) =>
+  router.push({ pathname: "/library/[setId]", params: { setId } });
 
 export default function TodayScreen() {
   const library = useLibraryStore((store) => store.state);
 
   const latest = useMemo(
-    () => [...library.sets].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0],
+    () =>
+      [...library.sets].sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt),
+      )[0],
     [library.sets],
   );
   const totals = useMemo(
     () => ({
       sets: library.sets.length,
-      senses: library.sets.reduce((sum, set) => sum + senseCount(library, set.id), 0),
+      senses: library.sets.reduce(
+        (sum, set) => sum + senseCount(library, set.id),
+        0,
+      ),
       questions: library.questions.length,
     }),
     [library],
   );
 
   return (
-    <Screen
-      refreshControl={<SyncRefreshControl />}
-    >
+    <Screen refreshControl={<SyncRefreshControl />}>
       <View style={styles.panel}>
         <ActiveRoomCard />
         {latest ? (
@@ -55,7 +66,9 @@ export default function TodayScreen() {
               <Text style={styles.taskTitle} numberOfLines={2}>
                 {latest.setName}
               </Text>
-              <Text style={styles.taskBody}>{senseCount(library, latest.id)} 個詞義</Text>
+              <Text style={styles.taskBody}>
+                {senseCount(library, latest.id)} 個詞義
+              </Text>
               <View style={styles.actions}>
                 <Button
                   label="看單字"
@@ -67,7 +80,10 @@ export default function TodayScreen() {
                   label="開始練習"
                   icon="play.fill"
                   onPress={() =>
-                    router.push({ pathname: "/practice", params: { setId: latest.id } })
+                    router.push({
+                      pathname: "/practice",
+                      params: { setId: latest.id },
+                    })
                   }
                   style={styles.primaryAction}
                 />
@@ -84,13 +100,19 @@ export default function TodayScreen() {
             <Card style={styles.intro}>
               <View style={styles.introText}>
                 <Text style={styles.introTitle}>先加入一組單字</Text>
-                <Text style={styles.taskBody}>手動輸入或交給 AI 整理，儲存後就能開始練習。</Text>
+                <Text style={styles.taskBody}>
+                  手動輸入或透過 MCP 加入，儲存後就能開始練習。
+                </Text>
               </View>
               <Illustration size={104} />
             </Card>
             <View style={styles.steps}>
               {STEPS.map((step, index) => (
-                <Animated.View key={step.title} entering={swapIn} style={styles.step}>
+                <Animated.View
+                  key={step.title}
+                  entering={swapIn}
+                  style={styles.step}
+                >
                   <View style={styles.stepMark}>
                     <Text style={styles.stepNumber}>{index + 1}</Text>
                   </View>

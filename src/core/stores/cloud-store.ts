@@ -12,11 +12,6 @@ import { create } from "zustand";
 
 import { CLOUD_SYNC_PENDING_EVENT } from "@/core/constants";
 import { flushLibraryMutations, useLibraryStore } from "@/core/stores/library-store";
-import {
-  flushAiPreferenceMutations,
-  useAiPreferencesStore,
-} from "@/core/stores/ai-preferences-store";
-import { writeCloudPreferences } from "@/core/lib/cloud-preferences";
 import { applyCloudRecords } from "@/core/lib/cloud-records";
 import { serializeAccountDataAction } from "@/core/lib/account-data-queue";
 import { isRetryableSyncError } from "@/core/lib/cloud-sync-errors";
@@ -78,9 +73,9 @@ interface CloudStore {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   /**
-   * `reconcileAccount` also reads the account's preferences and open practice
-   * session. Pressing 同步 means "make sure I have everything", so it asks for
-   * them; a background run decides for itself whether they are worth a read.
+   * `reconcileAccount` also reads the account's open practice session. Pressing
+   * 同步 means "make sure I have everything", so it asks for it; a background
+   * run decides for itself whether it is worth a read.
    */
   sync: (options?: { reconcileAccount?: boolean }) => Promise<void>;
 }
@@ -141,21 +136,18 @@ async function hydrateLocal(): Promise<void> {
   await useLibraryStore.getState().hydrate();
   const libraryError = useLibraryStore.getState().error;
   if (libraryError) throw new Error(libraryError);
-  await useAiPreferencesStore.getState().hydrate();
   await removeRetiredLearningData();
 }
 
 const enterNamespace = serializeAccountDataAction(
   async (namespace: string): Promise<void> => {
     await flushLibraryMutations();
-    await flushAiPreferenceMutations();
     setStorageNamespace(namespace);
     accountDocumentsRead = "";
     resetSyncJournalCache();
     await useLibraryStore.getState().reloadNamespace();
     const libraryError = useLibraryStore.getState().error;
     if (libraryError) throw new Error(libraryError);
-    await useAiPreferencesStore.getState().reloadNamespace();
     await removeRetiredLearningData();
   },
 );
@@ -353,7 +345,7 @@ async function refreshPending(set: SetState): Promise<void> {
   set({ pending: pendingCountOf(await loadSyncJournal()) });
 }
 
-/** Reads the account's preferences and open practice session, then writes back whichever side this device owes. */
+/** Reads the account's open practice session, then writes back whichever side this device owes. */
 async function reconcileAccountDocuments(
   db: CloudClient,
   uid: string,
@@ -367,18 +359,8 @@ async function reconcileAccountDocuments(
   )
     return;
   accountDocumentsRead = uid;
-  if (blobs.preferences)
-    await useAiPreferencesStore.getState().applyRemote(blobs.preferences);
   const work: (() => Promise<unknown>)[] = [];
   if (getStorageNamespace() !== accountNamespace(uid)) return;
-  if (dirtyBlobs.preferences > 0 || !blobs.preferences)
-    work.push(() =>
-      writeCloudPreferences(
-        db,
-        uid,
-        useAiPreferencesStore.getState().preferences,
-      ),
-    );
   // The newer session wins, whichever device it came from.
   const localPractice = localPracticeDraft();
   if (

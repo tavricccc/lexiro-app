@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/list";
 import { swapIn } from "@/components/ui/motion";
 import { Segmented } from "@/components/ui/segmented";
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import {
   normalizeOptionReasons,
   remapOptionReasons,

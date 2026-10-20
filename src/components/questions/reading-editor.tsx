@@ -21,7 +21,7 @@ import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
 import { countEnglishWords } from "@/core/ai-contract";
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { remapOptionReasons } from "@/core/components/questions/option-reasons";
 import {
   questionSourceOptions,

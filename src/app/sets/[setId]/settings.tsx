@@ -8,7 +8,7 @@ import { setFolderOptions } from "@/components/library/folder-options";
 import { ResumeChoice } from "@/components/resume-choice";
 import { InputRow, ListGroup, PickerRow } from "@/components/ui/list";
 import { swapIn } from "@/components/ui/motion";
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
 import { setWordDrafts } from "@/core/lib/word-edit";

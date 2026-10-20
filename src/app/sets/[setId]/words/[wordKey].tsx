@@ -9,7 +9,7 @@ import {
 } from "@/components/library/word-fields";
 import { ResumeChoice } from "@/components/resume-choice";
 import { EmptyState } from "@/components/ui/layout";
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { t } from "@/core/lib/i18n";
 import { prepareWordEdit } from "@/core/lib/word-edit";
 import { useCloudStore } from "@/core/stores/cloud-store";

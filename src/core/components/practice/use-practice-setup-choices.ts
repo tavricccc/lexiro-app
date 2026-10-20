@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { DEFAULT_CARD_TASKS, DEFAULT_QUESTION_TASKS } from "@/core/constants";
 import { isPracticeTask } from "@/core/constants/practice";
 import { useCloudStore } from "@/core/stores/cloud-store";

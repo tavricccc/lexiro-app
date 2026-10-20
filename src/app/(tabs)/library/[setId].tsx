@@ -105,11 +105,7 @@ export default function SetScreen() {
   const store = useLibraryStore.getState;
   const openSheet = (
     pathname:
-      | "/sets/[setId]/add"
-      | "/sets/[setId]/generate"
-      | "/sets/[setId]/supplement"
-      | "/sets/[setId]/settings"
-      | "/sets/[setId]/share",
+      "/sets/[setId]/add" | "/sets/[setId]/settings" | "/sets/[setId]/share",
   ) => router.push({ pathname, params: { setId } });
   const moveSet = () =>
     showActionSheet({
@@ -248,21 +244,11 @@ export default function SetScreen() {
             </Text>
             <View style={styles.actions}>
               <Button
-                label={t(
-                  tab === "questions"
-                    ? "home.generateQuestions"
-                    : "setEditor.addWord",
-                )}
-                icon={tab === "questions" ? "sparkles" : "plus"}
+                label={t("setEditor.addWord")}
+                icon="plus"
                 variant="ghost"
                 style={styles.action}
-                onPress={() =>
-                  openSheet(
-                    tab === "questions"
-                      ? "/sets/[setId]/generate"
-                      : "/sets/[setId]/add",
-                  )
-                }
+                onPress={() => openSheet("/sets/[setId]/add")}
               />
               <Button
                 label="開始練習"
@@ -467,15 +453,7 @@ export default function SetScreen() {
               <EmptyState
                 illustrated={false}
                 title="這個單字集還沒有題目"
-                body="用 AI 依這個單字集的詞義出題，審閱後再存進題庫。"
-                action={
-                  <Button
-                    label={t("home.generateQuestions")}
-                    icon="sparkles"
-                    disabled={!words.length}
-                    onPress={() => openSheet("/sets/[setId]/generate")}
-                  />
-                }
+                body="透過 MCP 連線的 AI 助理可以依這個單字集出題並存進題庫。"
               />
             )}
           </Animated.View>
@@ -487,12 +465,6 @@ export default function SetScreen() {
                 title={t("setEditor.addWord")}
                 chevron
                 onPress={() => openSheet("/sets/[setId]/add")}
-              />
-              <ListRow
-                icon="sparkles"
-                title={t("supplement.title")}
-                chevron
-                onPress={() => openSheet("/sets/[setId]/supplement")}
               />
               <ListRow
                 icon="pencil"

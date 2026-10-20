@@ -215,17 +215,16 @@ export function countTaskAvailability(
   const counts = {} as Record<PracticeTask, number>;
   const groups = withMeaningQuestions(input);
   for (const task of PRACTICE_QUESTION_TASKS)
-    counts[task] =
-      isWordTask(task)
-        ? new Set(
-            questionPool(task, groups)
-              .flat()
-              .map((item) => item.wordKey),
-          ).size
-        : questionPool(task, groups).reduce(
-            (total, group) => total + group.length,
-            0,
-          );
+    counts[task] = isWordTask(task)
+      ? new Set(
+          questionPool(task, groups)
+            .flat()
+            .map((item) => item.wordKey),
+        ).size
+      : questionPool(task, groups).reduce(
+          (total, group) => total + group.length,
+          0,
+        );
   return counts;
 }
 

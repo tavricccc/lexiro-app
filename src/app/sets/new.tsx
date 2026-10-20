@@ -3,7 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
-import { FormScreen, SheetHeader } from "@/components/form-sheet";
+import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
 import { setFolderOptions } from "@/components/library/folder-options";
 import { ExampleRows } from "@/components/library/word-fields";
 import { ResumeChoice } from "@/components/resume-choice";
@@ -11,11 +11,10 @@ import {
   ActionRow,
   InputRow,
   ListGroup,
-  ListRow,
   PickerRow,
 } from "@/components/ui/list";
 import { glide, swapIn } from "@/components/ui/motion";
-import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
+import { useResumableDraft } from "@/core/lib/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
 import { randomUUID } from "@/core/lib/id";
@@ -69,7 +68,6 @@ export default function NewSetScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // The web's 要怎麼建立？ choice comes first; a resumed draft is already manual.
-  const [entry, setEntry] = useState<"ask" | "manual">("ask");
   const title = t("setEditor.createTitle");
 
   if (saved.status === "checking") return null;
@@ -84,47 +82,11 @@ export default function NewSetScreen() {
               ? "draft.invalidDescription"
               : "draft.manualSetDescription",
           )}
-          onResume={() => {
-            saved.resume();
-            setEntry("manual");
-          }}
+          onResume={saved.resume}
           onRestart={saved.restart}
         />
       </>
     );
-  if (entry === "ask")
-    return (
-      <FormScreen>
-        <SheetHeader
-          title={t("setEditor.howTitle")}
-          onCancel={() => router.back()}
-        />
-        <Animated.View entering={swapIn}>
-          <ListGroup>
-            <ListRow
-              icon="pencil"
-              title={t("setEditor.manualWay")}
-              subtitle={t("setEditor.manualWayHint")}
-              chevron
-              onPress={() => setEntry("manual")}
-            />
-            <ListRow
-              icon="sparkles"
-              title={t("setEditor.aiWay")}
-              subtitle={t("setEditor.aiWayHint")}
-              chevron
-              onPress={() =>
-                router.push({
-                  pathname: "/sets/organize",
-                  params: folderId ? { folderId } : {},
-                })
-              }
-            />
-          </ListGroup>
-        </Animated.View>
-      </FormScreen>
-    );
-
   const { setName, words } = saved.draft;
   const setWords = (next: WordRow[]) => saved.update({ words: next });
   const updateRow = (index: number, patch: Partial<WordRow>) =>
@@ -175,9 +137,7 @@ export default function NewSetScreen() {
         saveLabel="建立"
         busy={busy}
         onSave={() => void save()}
-        cancelIcon="chevron.left"
-        cancelLabel={t("common.back")}
-        onCancel={() => setEntry("ask")}
+        onCancel={() => leaveFlow(saved.persistence, saved.clear)}
       />
       <Animated.View entering={swapIn}>
         <ListGroup>

@@ -27,10 +27,7 @@ import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
 import { useTransitionDone } from "@/components/ui/use-transition-done";
 import { isCorrectChoice } from "@/core/components/practice/meaning-questions";
-import {
-  buildWrongContent,
-  type PracticeEntry,
-} from "@/core/components/practice/practice-queue";
+import { type PracticeEntry } from "@/core/components/practice/practice-queue";
 import { usePersistPracticeSession } from "@/core/components/practice/use-practice-persistence";
 import { usePracticeSessionActions } from "@/core/components/practice/use-practice-session-actions";
 import { t } from "@/core/lib/i18n";
@@ -216,7 +213,6 @@ function Session({ run }: { run: PracticeRun }) {
         skipped={skipped.length}
         marked={marked.length}
         wrongCount={wrong.length}
-        wrongContent={buildWrongContent(wrong, activeEntries, answerChoices)}
         onRetry={() => actions.retry(wrong)}
         onRetryMarked={marked.length ? () => actions.retry(marked) : undefined}
         onNewRound={(next) => {

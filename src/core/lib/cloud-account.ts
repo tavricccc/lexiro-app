@@ -3,15 +3,12 @@ import type { CloudClient } from "./cloud-client";
 import type { SyncBlobKind } from "./sync-journal";
 import { SYNC_ORIGIN_ID } from "./cloud-sync";
 import { randomUUID } from "./id";
-import { normalizeCloudPreferences } from "./cloud-preferences";
-import type { AiPreferences } from "./ai-preferences";
 import {
   normalizeCloudPracticeDraft,
   type PracticeDraftEnvelope,
 } from "./practice-storage";
 
 export interface CloudBlobs {
-  preferences: AiPreferences | null;
   practice: PracticeDraftEnvelope | null;
 }
 
@@ -26,10 +23,9 @@ export async function readCloudBlobs(
     revision: number;
   }>("/sync/blobs", undefined, signal);
   db.blobRevision = revision;
+  // Older accounts may still carry an AI model preference blob. It is left
+  // untouched here and simply ignored, so legacy data never fails a sync.
   return {
-    preferences: blobs.preferences
-      ? normalizeCloudPreferences(blobs.preferences, uid)
-      : null,
     practice: normalizeCloudPracticeDraft(blobs.practice, uid),
   };
 }

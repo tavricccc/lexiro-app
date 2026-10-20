@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 import { AppState } from "react-native";
 
-import { AGENT_WORKER_URL, AI_WORKER_URL, WEB_ORIGIN } from "./config";
+import { AGENT_WORKER_URL, WEB_ORIGIN } from "./config";
 
 /**
  * The browser globals the shared web code (src/core) still touches, mapped
@@ -120,7 +120,6 @@ if (typeof arrays.toReversed !== "function")
 // Next.js inlines these at build time; here they are set before first use.
 Object.assign(process.env, {
   NEXT_PUBLIC_AGENT_WORKER_URL: AGENT_WORKER_URL,
-  NEXT_PUBLIC_AI_WORKER_URL: AI_WORKER_URL,
 });
 
 // localStorage: synchronous reads from memory, written through to AsyncStorage.

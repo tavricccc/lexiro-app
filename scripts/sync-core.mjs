@@ -2,7 +2,7 @@
 /**
  * Copies the web app's platform-free domain code into src/core so the app
  * and the web keep one implementation of the library, sync, questions,
- * practice and AI logic.
+ * and practice logic.
  *
  *   node scripts/sync-core.mjs [path/to/lexiro]   (default ../lexiro)
  *
@@ -37,14 +37,13 @@ const SOURCES = [
       "routes.ts",
       "speech.ts",
       "use-app-router.ts",
-      "word-photo.ts",
     ],
   ],
   ["stores", "stores", ["app-update-store.ts", "ui-store.ts"]],
   [
     "components",
     "components",
-    ["ui", "use-practice-keyboard.ts", "use-admin-pagination.ts", "admin-account-adjustment.ts"],
+    ["ui", "use-practice-keyboard.ts"],
   ],
   ["packages/ai-contract/src", "ai-contract", []],
   ["src/generated", "generated", []],
@@ -84,18 +83,6 @@ const PATCHES = {
     [
       "await runtime.signInWithPopup(auth, new runtime.GoogleAuthProvider());",
       'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
-    ],
-  ],
-  // React Native's own fetch buffers the whole body; AI replies stream, so
-  // they go through expo/fetch, whose response.body is a real ReadableStream.
-  "lib/managed-client.ts": [
-    [
-      'import { appCheckHeaders } from "@/core/lib/app-check";',
-      'import { appCheckHeaders } from "@/core/lib/app-check";\nimport { fetch as streamingFetch } from "expo/fetch";',
-    ],
-    [
-      "response = await fetch(`${base",
-      "response = await (streamingFetch as unknown as typeof fetch)(`${base",
     ],
   ],
   // React Native's URL has no protocol setter or searchParams.set.
