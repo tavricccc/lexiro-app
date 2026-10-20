@@ -3,11 +3,17 @@ import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
-import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
+import { FormScreen, SheetHeader } from "@/components/form-sheet";
 import { setFolderOptions } from "@/components/library/folder-options";
 import { ExampleRows } from "@/components/library/word-fields";
 import { ResumeChoice } from "@/components/resume-choice";
-import { ActionRow, InputRow, ListGroup, PickerRow } from "@/components/ui/list";
+import {
+  ActionRow,
+  InputRow,
+  ListGroup,
+  ListRow,
+  PickerRow,
+} from "@/components/ui/list";
 import { glide, swapIn } from "@/components/ui/motion";
 import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
@@ -36,7 +42,8 @@ const emptyRow = (word = ""): WordRow => ({
   supplementary: false,
 });
 
-const rowIncomplete = (row: WordRow) => !row.word.trim() || !row.pos.trim() || !row.meaningZh.trim();
+const rowIncomplete = (row: WordRow) =>
+  !row.word.trim() || !row.pos.trim() || !row.meaningZh.trim();
 
 interface NewSetDraft {
   setName: string;
@@ -52,11 +59,17 @@ export default function NewSetScreen() {
   const home = folderId || UNCATEGORIZED_FOLDER_ID;
   const saved = useResumableDraft<NewSetDraft>(
     `lexiro:flow-draft:v1:${uid ?? "local"}:manual-set:${home}`,
-    { setName: t("setEditor.defaultSetName"), folderId: home, words: [emptyRow()] },
+    {
+      setName: t("setEditor.defaultSetName"),
+      folderId: home,
+      words: [emptyRow()],
+    },
   );
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // The web's 要怎麼建立？ choice comes first; a resumed draft is already manual.
+  const [entry, setEntry] = useState<"ask" | "manual">("ask");
   const title = t("setEditor.createTitle");
 
   if (saved.status === "checking") return null;
@@ -67,12 +80,49 @@ export default function NewSetScreen() {
         <ResumeChoice
           invalid={saved.status === "invalid"}
           description={t(
-            saved.status === "invalid" ? "draft.invalidDescription" : "draft.manualSetDescription",
+            saved.status === "invalid"
+              ? "draft.invalidDescription"
+              : "draft.manualSetDescription",
           )}
-          onResume={saved.resume}
+          onResume={() => {
+            saved.resume();
+            setEntry("manual");
+          }}
           onRestart={saved.restart}
         />
       </>
+    );
+  if (entry === "ask")
+    return (
+      <FormScreen>
+        <SheetHeader
+          title={t("setEditor.howTitle")}
+          onCancel={() => router.back()}
+        />
+        <Animated.View entering={swapIn}>
+          <ListGroup>
+            <ListRow
+              icon="pencil"
+              title={t("setEditor.manualWay")}
+              subtitle={t("setEditor.manualWayHint")}
+              chevron
+              onPress={() => setEntry("manual")}
+            />
+            <ListRow
+              icon="sparkles"
+              title={t("setEditor.aiWay")}
+              subtitle={t("setEditor.aiWayHint")}
+              chevron
+              onPress={() =>
+                router.push({
+                  pathname: "/sets/organize",
+                  params: folderId ? { folderId } : {},
+                })
+              }
+            />
+          </ListGroup>
+        </Animated.View>
+      </FormScreen>
     );
 
   const { setName, words } = saved.draft;
@@ -96,13 +146,18 @@ export default function NewSetScreen() {
           word: row.word,
           pos: row.pos,
           meaningZh: row.meaningZh,
-          examples: row.examples.map((example) => example.trim()).filter(Boolean),
+          examples: row.examples
+            .map((example) => example.trim())
+            .filter(Boolean),
           supplementary: row.supplementary,
         })),
       });
       saved.clear();
       router.back();
-      router.push({ pathname: "/library/[setId]", params: { setId: created.id } });
+      router.push({
+        pathname: "/library/[setId]",
+        params: { setId: created.id },
+      });
     } catch (reason) {
       setError(
         t("setEditor.saveFailed", {
@@ -120,7 +175,9 @@ export default function NewSetScreen() {
         saveLabel="建立"
         busy={busy}
         onSave={() => void save()}
-        onCancel={() => leaveFlow(saved.persistence, saved.clear)}
+        cancelIcon="chevron.left"
+        cancelLabel={t("common.back")}
+        onCancel={() => setEntry("ask")}
       />
       <Animated.View entering={swapIn}>
         <ListGroup>
@@ -191,7 +248,11 @@ export default function NewSetScreen() {
                 title={t("setEditor.addSense")}
                 disabled={busy}
                 onPress={() =>
-                  setWords([...words.slice(0, index + 1), emptyRow(row.word), ...words.slice(index + 1)])
+                  setWords([
+                    ...words.slice(0, index + 1),
+                    emptyRow(row.word),
+                    ...words.slice(index + 1),
+                  ])
                 }
               />
               {words.length > 1 ? (
