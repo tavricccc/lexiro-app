@@ -4,7 +4,6 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/ui/button";
-import { VerdictMark } from "@/components/ui/verdict-mark";
 import {
   buildPracticeQueue,
   type PracticeEntry,
@@ -12,7 +11,7 @@ import {
 import { usePracticePool } from "@/core/components/practice/use-practice-pool";
 import { t } from "@/core/lib/i18n";
 import { useLibraryStore } from "@/core/stores/library-store";
-import { colors, radius, space, type } from "@/lib/theme";
+import { colors, latin, radius, space, type } from "@/lib/theme";
 import type { PracticeChoices } from "./practice-run";
 import { pop, swapIn } from "@/components/ui/motion";
 import { ParticleBurst } from "@/components/ui/particle-burst";
@@ -47,34 +46,21 @@ export function ResultView({
         { paddingBottom: 40 + insets.bottom },
       ]}
     >
-      <Animated.View
-        entering={pop}
-        style={styles.finish}
-      >
+      <Animated.View entering={pop} style={styles.finish}>
+        <Text style={styles.finishLabel}>{t("practice.resultTitle")}</Text>
         <View>
-          <Animated.View
-            entering={pop.delay(120)}
-            style={styles.finishMark}
-          >
-            <VerdictMark
-              correct
-              size={28}
-              disc={false}
-              markColor={colors.studyInk}
-            />
-          </Animated.View>
-          {/* A good round is celebrated once, from the mark. */}
+          <Text style={styles.finishScore}>
+            {correct}
+            <Text style={styles.finishTotal}> / {total}</Text>
+          </Text>
+          {/* A good round is celebrated once, from the score. */}
           <ParticleBurst
             play={total && correct / total >= 0.6 ? 1 : 0}
             count={28}
             reach={150}
           />
         </View>
-        <Text style={styles.finishLabel}>{t("practice.resultTitle")}</Text>
-        <Text style={styles.finishScore}>
-          {correct}
-          <Text style={styles.finishTotal}> / {total}</Text>
-        </Text>
+        <Tally correct={correct} total={total} />
         <View style={styles.stats}>
           <Stat label={t("practice.skippedLabel")} value={skipped} />
           <Stat label={t("practice.markedLabel")} value={marked} />
@@ -109,6 +95,21 @@ export function ResultView({
         />
       </Animated.View>
     </ScrollView>
+  );
+}
+
+/** The round as an answer card: one bubble per question, the right ones filled. */
+function Tally({ correct, total }: { correct: number; total: number }) {
+  return (
+    <View style={styles.tally} accessible={false}>
+      {Array.from({ length: total }, (_, index) => (
+        <Animated.View
+          key={index}
+          entering={pop.delay(160 + Math.min(index, 30) * 24)}
+          style={[styles.tallyBubble, index < correct && styles.tallyFilled]}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -159,46 +160,47 @@ function NewRoundButton({
 
 const styles = StyleSheet.create({
   content: { padding: space.gutter, gap: space.section },
+  // The one orange field of the session, ink on it as on the printed card.
   finish: {
-    alignItems: "flex-start",
-    gap: 4,
+    gap: 6,
     padding: 24,
-    paddingTop: 28,
+    paddingTop: 22,
     borderRadius: radius.stage,
     borderCurve: "continuous",
-    backgroundColor: colors.studyInk,
+    backgroundColor: colors.field,
   },
-  finishMark: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.studyLime,
-    marginBottom: 14,
-  },
-  finishLabel: { ...type.body, color: colors.studySoft },
+  finishLabel: { ...type.section, color: colors.fieldInk },
   finishScore: {
-    fontSize: 64,
-    fontWeight: "600",
-    letterSpacing: -2,
-    color: colors.studyPaper,
+    ...type.poster,
+    fontSize: 128,
+    lineHeight: 132,
+    letterSpacing: -6,
+    color: colors.fieldInk,
     fontVariant: ["tabular-nums"],
   },
   finishTotal: {
-    fontSize: 28,
-    fontWeight: "500",
-    letterSpacing: 0,
-    color: colors.studySoft,
+    ...latin.bold,
+    fontSize: 36,
+    letterSpacing: -1,
+    color: colors.fieldInk,
   },
-  stats: { flexDirection: "row", gap: 28, marginTop: 8 },
-  stat: { gap: 2 },
+  tally: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  tallyBubble: {
+    width: 21,
+    height: 14,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: colors.fieldInk,
+  },
+  tallyFilled: { backgroundColor: colors.fieldInk },
+  stats: { flexDirection: "row", gap: 28, marginTop: 14 },
+  stat: { gap: 0 },
   statValue: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: colors.studyPaper,
+    ...latin.bold,
+    fontSize: 28,
+    color: colors.fieldInk,
     fontVariant: ["tabular-nums"],
   },
-  statLabel: { ...type.hint, color: colors.studySoft },
+  statLabel: { ...type.hint, color: colors.fieldInk },
   actions: { gap: 10 },
 });

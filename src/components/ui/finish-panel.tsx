@@ -39,7 +39,7 @@ export function FinishPanel({
           name="checkmark"
           size={30}
           weight="bold"
-          tintColor={colors.studyInk}
+          tintColor={colors.fieldInk}
         />
       </Animated.View>
       <View style={styles.text}>
@@ -65,12 +65,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "center", gap: 22, padding: 24 },
   mark: {
     alignSelf: "center",
-    width: 72,
+    // The answer-card bubble, filled in orange.
+    width: 108,
     height: 72,
-    borderRadius: 36,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.studyLime,
+    backgroundColor: colors.field,
   },
   text: { gap: 8 },
   title: { ...type.title, color: colors.foreground, textAlign: "center" },

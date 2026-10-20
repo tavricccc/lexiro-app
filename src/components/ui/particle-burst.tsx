@@ -10,12 +10,13 @@ import Animated, {
 
 import { colors } from "@/lib/theme";
 
+// The card's orange, pencil ink, and the green of a right answer.
 const PALETTE = [
+  colors.field,
+  colors.foreground,
   colors.success,
-  colors.brand,
-  colors.studyLime,
-  "#f6c453",
-  "#7cc8f2",
+  colors.fieldSoft,
+  "#ffd23f",
 ];
 const DURATION = 720;
 

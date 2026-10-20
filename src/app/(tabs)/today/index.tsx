@@ -5,12 +5,13 @@ import Animated from "react-native-reanimated";
 
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { ActiveRoomCard } from "@/components/rooms/active-room-card";
+import { Bubble } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
-import { Card, Illustration, Screen } from "@/components/ui/layout";
-import { swapIn } from "@/components/ui/motion";
+import { Screen } from "@/components/ui/layout";
+import { enterUp, pop } from "@/components/ui/motion";
 import { senseCount } from "@/lexiro/library";
 import { useLibraryStore } from "@/core/stores/library-store";
-import { colors, type } from "@/lib/theme";
+import { colors, isLatin, latin, radius, type } from "@/lib/theme";
 
 const STEPS = [
   {
@@ -58,27 +59,35 @@ export default function TodayScreen() {
         <ActiveRoomCard />
         {latest ? (
           <>
-            <Card style={styles.task}>
-              <View style={styles.hero}>
-                <Illustration size={200} />
-              </View>
-              <Text style={styles.taskHint}>接著練</Text>
-              <Text style={styles.taskTitle} numberOfLines={2}>
+            <View style={styles.poster}>
+              <Animated.View entering={pop} style={styles.giantBubble} />
+              <Text style={styles.posterHint}>接著練</Text>
+              <Text
+                style={[
+                  styles.posterTitle,
+                  isLatin(latest.setName) && styles.posterTitleLatin,
+                ]}
+                numberOfLines={2}
+              >
                 {latest.setName}
               </Text>
-              <Text style={styles.taskBody}>
-                {senseCount(library, latest.id)} 個詞義
-              </Text>
+              <View style={styles.count}>
+                <Text style={styles.countValue}>
+                  {senseCount(library, latest.id)}
+                </Text>
+                <Text style={styles.countLabel}>個詞義</Text>
+              </View>
               <View style={styles.actions}>
                 <Button
                   label="看單字"
-                  variant="ghost"
+                  variant="onField"
                   onPress={() => openSet(latest.id)}
                   style={styles.secondaryAction}
                 />
                 <Button
                   label="開始練習"
                   icon="play.fill"
+                  variant="ink"
                   onPress={() =>
                     router.push({
                       pathname: "/practice",
@@ -88,8 +97,8 @@ export default function TodayScreen() {
                   style={styles.primaryAction}
                 />
               </View>
-            </Card>
-            <Animated.View entering={swapIn} style={styles.totals}>
+            </View>
+            <Animated.View entering={enterUp.delay(80)} style={styles.totals}>
               <Total value={totals.sets} label="單字集" />
               <Total value={totals.senses} label="詞義" />
               <Total value={totals.questions} label="題目" />
@@ -97,28 +106,26 @@ export default function TodayScreen() {
           </>
         ) : (
           <>
-            <Card style={styles.intro}>
-              <View style={styles.introText}>
-                <Text style={styles.introTitle}>先加入一組單字</Text>
-                <Text style={styles.taskBody}>
-                  手動輸入或透過 MCP 加入，儲存後就能開始練習。
-                </Text>
-              </View>
-              <Illustration size={104} />
-            </Card>
+            <View style={styles.poster}>
+              <Animated.View entering={pop} style={styles.giantBubble} />
+              <Text style={[styles.posterTitle, styles.introTitle]}>
+                先加入一組單字
+              </Text>
+              <Text style={styles.posterBody}>
+                手動輸入或透過 MCP 加入，儲存後就能開始練習。
+              </Text>
+            </View>
             <View style={styles.steps}>
               {STEPS.map((step, index) => (
                 <Animated.View
                   key={step.title}
-                  entering={swapIn}
+                  entering={enterUp.delay(80 + index * 70)}
                   style={styles.step}
                 >
-                  <View style={styles.stepMark}>
-                    <Text style={styles.stepNumber}>{index + 1}</Text>
-                  </View>
+                  <Bubble letter={String.fromCharCode(65 + index)} size={26} />
                   <View style={styles.stepText}>
                     <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.taskBody}>{step.body}</Text>
+                    <Text style={styles.stepBody}>{step.body}</Text>
                   </View>
                 </Animated.View>
               ))}
@@ -133,53 +140,79 @@ export default function TodayScreen() {
 function Total({ value, label }: { value: number; label: string }) {
   return (
     <View style={styles.total}>
-      <Text style={styles.totalValue}>{value}</Text>
+      <Text style={styles.totalValue} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
       <Text style={styles.totalLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: { gap: 24 },
-  task: { gap: 6, paddingTop: 22 },
-  hero: { alignItems: "center", marginBottom: 8 },
-  taskHint: { ...type.hint, color: colors.muted },
-  taskTitle: { ...type.display, color: colors.foreground },
-  taskBody: { ...type.body, color: colors.muted },
+  panel: { gap: 28 },
+  // The answer card's orange as one poster: the latest set, how much is in
+  // it, and the way in. Ink on orange in both modes.
+  poster: {
+    overflow: "hidden",
+    gap: 6,
+    padding: 22,
+    paddingTop: 20,
+    borderRadius: radius.stage,
+    borderCurve: "continuous",
+    backgroundColor: colors.field,
+  },
+  // The bubble at its largest, filled in and cropped by the corner.
+  giantBubble: {
+    position: "absolute",
+    top: -70,
+    right: -80,
+    width: 270,
+    height: 180,
+    borderRadius: 999,
+    backgroundColor: colors.fieldInk,
+  },
+  posterHint: { ...type.section, color: colors.fieldInk },
+  posterTitle: {
+    ...type.display,
+    fontSize: 40,
+    lineHeight: 46,
+    color: colors.fieldInk,
+    marginTop: 64,
+  },
+  posterTitleLatin: {
+    ...latin.heavy,
+    fontWeight: undefined,
+    fontSize: 48,
+    lineHeight: 50,
+    letterSpacing: -2,
+  },
+  introTitle: { marginTop: 96 },
+  posterBody: { ...type.body, color: colors.fieldInk },
+  count: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  countValue: {
+    ...type.poster,
+    color: colors.fieldInk,
+    fontVariant: ["tabular-nums"],
+  },
+  countLabel: { ...type.section, color: colors.fieldInk },
   actions: { flexDirection: "row", gap: 10, marginTop: 14 },
   secondaryAction: { flex: 1 },
-  primaryAction: { flex: 1.3 },
-  // One band for the three counts, not a row of identical tiles.
-  totals: {
-    flexDirection: "row",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 24,
-    borderCurve: "continuous",
-    backgroundColor: colors.inset,
-  },
-  total: { flex: 1, gap: 2 },
+  primaryAction: { flex: 1.4 },
+  // Three counts at a large size on the canvas: no band, no tiles.
+  totals: { flexDirection: "row", gap: 16, paddingHorizontal: 4 },
+  total: { flex: 1 },
   totalValue: {
-    fontSize: 28,
-    fontWeight: "700",
+    ...latin.heavy,
+    fontSize: 44,
+    lineHeight: 48,
+    letterSpacing: -1.5,
     color: colors.foreground,
     fontVariant: ["tabular-nums"],
   },
-  totalLabel: { ...type.hint, color: colors.muted },
-  intro: { flexDirection: "row", alignItems: "center", gap: 12 },
-  introText: { flex: 1, gap: 6 },
-  introTitle: { ...type.title, color: colors.foreground },
+  totalLabel: { ...type.body, color: colors.muted },
   steps: { gap: 22, paddingHorizontal: 4 },
   step: { flexDirection: "row", gap: 14 },
-  stepMark: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.brandSoft,
-  },
-  stepNumber: { fontSize: 16, fontWeight: "700", color: colors.brand },
   stepText: { flex: 1, gap: 3 },
   stepTitle: { ...type.section, color: colors.foreground },
+  stepBody: { ...type.body, color: colors.muted },
 });

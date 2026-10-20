@@ -3,6 +3,7 @@ import { hydrateLocalStorage } from "@/platform/install";
 
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { reloadAppAsync } from "expo";
+import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { StyleSheet, useColorScheme, View } from "react-native";
@@ -13,7 +14,7 @@ import { EmptyState } from "@/components/ui/layout";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ToastHost } from "@/components/toast-host";
 import { useCloudStore } from "@/core/stores/cloud-store";
-import { BRAND_DARK, BRAND_LIGHT, colors } from "@/lib/theme";
+import { BRAND_DARK, BRAND_LIGHT, colors, fonts, plain } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,6 +28,9 @@ export default function RootLayout() {
   const user = useCloudStore((state) => state.user);
   const error = useCloudStore((state) => state.error);
   const [localOnly, setLocalOnly] = useState<boolean | null>(null);
+  // A font that fails to load falls back to the system face; it never blocks.
+  const [fontsLoaded, fontError] = useFonts(fonts);
+  const fontsSettled = fontsLoaded || Boolean(fontError);
 
   useEffect(() => {
     void hydrateLocalStorage().then(() => {
@@ -38,14 +42,15 @@ export default function RootLayout() {
   const failed = !ready && Boolean(error);
   // The local library is shown at once; sync catches up underneath.
   useEffect(() => {
+    if (!fontsSettled) return;
     if ((ready && localOnly !== null) || failed) void SplashScreen.hideAsync();
-  }, [ready, localOnly, failed]);
+  }, [ready, localOnly, failed, fontsSettled]);
 
   const askSignIn = ready && configured && !user && localOnly === false;
 
   const dark = scheme === "dark";
   const base = dark ? DarkTheme : DefaultTheme;
-  const canvas = dark ? "#131d17" : "#eaf0ec";
+  const canvas = dark ? plain.canvas.dark : plain.canvas.light;
   const theme = {
     ...base,
     colors: {
@@ -67,7 +72,7 @@ export default function RootLayout() {
             title: "練習",
             headerBackButtonDisplayMode: "minimal",
             headerShadowVisible: false,
-            headerTintColor: dark ? "#eef4f0" : "#13201a",
+            headerTintColor: dark ? plain.foreground.dark : plain.foreground.light,
             headerStyle: { backgroundColor: canvas },
           }}
         />

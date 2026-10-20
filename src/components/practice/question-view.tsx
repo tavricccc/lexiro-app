@@ -161,11 +161,8 @@ export function QuestionView({
               return (
                 <AnswerOption
                   key={`${item.id}:${index}`}
-                  label={
-                    wordTask
-                      ? option
-                      : `${String.fromCharCode(65 + index)}  ${option}`
-                  }
+                  letter={String.fromCharCode(65 + index)}
+                  label={option}
                   note={
                     used !== undefined && !answered
                       ? t("practice.usedInBlank", { index: used })

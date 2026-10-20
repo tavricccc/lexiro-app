@@ -131,7 +131,8 @@ export function QuestionStage({
           return (
             <AnswerOption
               key={index}
-              label={`${String.fromCharCode(65 + index)}  ${option}`}
+              letter={String.fromCharCode(65 + index)}
+              label={option}
               note={
                 used ? t("practice.usedInBlank", { index: used }) : undefined
               }

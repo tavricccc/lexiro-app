@@ -5,64 +5,103 @@ function pair(light: string, dark: string): ColorValue {
   return DynamicColorIOS({ light, dark });
 }
 
-/** Lexiro green (web --brand-500 / dark --brand-600), the app-wide tint. */
-export const BRAND_LIGHT = "#3f7c5a";
-export const BRAND_DARK = "#8ecdab";
+/**
+ * The look is the 學測 answer card: its orange print, the 2B pencil that
+ * fills a bubble, and the white of the sheet. Orange is the one accent; ink
+ * is the strong fill; the bubble (a full oval) is the one shape that recurs.
+ */
+export const ORANGE = "#ff6a13";
+export const INK = "#0b0f14";
+
+/** The tint for controls: switches, sliders, the tab bar. */
+export const BRAND_LIGHT = "#f05a06";
+export const BRAND_DARK = "#ff8a3d";
 export const brand = pair(BRAND_LIGHT, BRAND_DARK);
 
-/**
- * The web app's tokens (lexiro/app/globals.css): a mist-green canvas, opaque
- * cards, and a near-black contrast pill as the one strong fill. Surfaces are
- * told apart by a step in tone, not by lines or shadows.
- */
+/** Plain values for native options that take a string, not a dynamic color. */
+export const plain = {
+  canvas: { light: "#f1f2f0", dark: "#0b0f13" },
+  foreground: { light: INK, dark: "#f1f2ee" },
+} as const;
+
+/** Surfaces are told apart by a step in tone, not by lines or shadows. */
 export const colors = {
   brand,
-  canvas: pair("#eaf0ec", "#131d17"),
-  card: pair("#ffffff", "#0c130f"),
-  foreground: pair("#13201a", "#eef4f0"),
-  muted: pair("#4f6157", "#a3b5aa"),
-  faint: pair("rgba(19,32,26,0.42)", "rgba(238,244,240,0.42)"),
-  primary: pair("#15211b", "#f3f7f4"),
-  primaryForeground: pair("#f4f8f5", "#0f1813"),
-  secondary: pair("rgba(19,32,26,0.06)", "rgba(255,255,255,0.07)"),
-  inset: pair("rgba(19,32,26,0.05)", "rgba(255,255,255,0.06)"),
-  pressed: pair("rgba(19,32,26,0.08)", "rgba(255,255,255,0.10)"),
-  separator: pair("rgba(19,32,26,0.12)", "rgba(255,255,255,0.12)"),
-  selected: pair("#e6f0ea", "#1d3428"),
-  brandSoft: pair("#e3f0e8", "#16261d"),
-  destructive: pair("#c83b3b", "#ff7a7a"),
-  destructiveSoft: pair("#fbe9e9", "#3a1a1a"),
-  success: pair("#1f8a5d", "#5cc99a"),
-  successSoft: pair("#e1f2e9", "#123326"),
-  // The completion surface keeps the same ink and spring green in both modes.
-  studyInk: "#173f32",
-  studyPaper: "#f4fbf6",
-  studySoft: "#c6dfd1",
-  studyLime: "#ccf3a9",
+  canvas: pair(plain.canvas.light, plain.canvas.dark),
+  card: pair("#ffffff", "#171c22"),
+  foreground: pair(plain.foreground.light, plain.foreground.dark),
+  muted: pair("#535b63", "#a2aab2"),
+  faint: pair("rgba(11,15,20,0.42)", "rgba(241,242,238,0.42)"),
+  // Pencil on paper: ink with orange words; at night the orange takes over.
+  primary: pair(INK, ORANGE),
+  primaryForeground: pair("#ff7a2a", INK),
+  secondary: pair("rgba(11,15,20,0.06)", "rgba(255,255,255,0.08)"),
+  inset: pair("rgba(11,15,20,0.05)", "rgba(255,255,255,0.06)"),
+  pressed: pair("rgba(11,15,20,0.08)", "rgba(255,255,255,0.10)"),
+  separator: pair("rgba(11,15,20,0.12)", "rgba(255,255,255,0.12)"),
+  selected: pair("#e4e6e8", "#262d35"),
+  brandSoft: pair("#ffe6d6", "#3a1e0c"),
+  destructive: pair("#d22f2f", "#ff7a7a"),
+  destructiveSoft: pair("#fde6e4", "#3d1717"),
+  success: pair("#10894d", "#4fd18b"),
+  successSoft: pair("#dcf3e5", "#0f3020"),
+  // The orange field keeps ink on it in both modes, like the printed card.
+  field: ORANGE,
+  fieldInk: INK,
+  fieldSoft: "#ffb27f",
+  fieldDeep: "#e25404",
 } as const;
 
 export const radius = {
-  control: 24,
-  card: 28,
-  stage: 36,
+  control: 22,
+  card: 24,
+  stage: 24,
   segment: 21,
+  /** The bubble: always a full oval. */
+  bubble: 999,
 } as const;
 
 export const space = {
   gutter: 16,
-  section: 24,
+  section: 28,
   block: 16,
   row: 20,
 } as const;
 
-/** Type roles from the web DESIGN.md, scaled up a step for a phone held in hand. */
+/**
+ * Albert Sans sets the Latin side of the app (the words being learnt, the
+ * numbers, the A–D letters); Chinese stays in the system face. Each weight is
+ * its own family, so styles name the family and never set fontWeight.
+ */
+export const fonts = {
+  "AlbertSans-500": require("../../assets/fonts/AlbertSans-500.ttf"),
+  "AlbertSans-600": require("../../assets/fonts/AlbertSans-600.ttf"),
+  "AlbertSans-700": require("../../assets/fonts/AlbertSans-700.ttf"),
+  "AlbertSans-800": require("../../assets/fonts/AlbertSans-800.ttf"),
+};
+
+export const latin = {
+  medium: { fontFamily: "AlbertSans-500" },
+  semibold: { fontFamily: "AlbertSans-600" },
+  bold: { fontFamily: "AlbertSans-700" },
+  heavy: { fontFamily: "AlbertSans-800" },
+} as const;
+
+/** Text with nothing outside Latin script, which can be set in Albert Sans. */
+export function isLatin(text: string) {
+  return /^[\u0000-\u024f\u2000-\u206f]*$/.test(text);
+}
+
+/** Two sizes do the work, a very large one and a small one. */
 export const type = {
-  display: { fontSize: 34, fontWeight: "700", letterSpacing: -0.6 },
-  title: { fontSize: 22, fontWeight: "700", letterSpacing: -0.3 },
+  /** Numbers and words at poster size. */
+  poster: { ...latin.heavy, fontSize: 88, lineHeight: 88, letterSpacing: -4 },
+  display: { fontSize: 36, fontWeight: "800", letterSpacing: -1 },
+  title: { fontSize: 24, fontWeight: "800", letterSpacing: -0.5 },
   section: { fontSize: 18, fontWeight: "700", letterSpacing: -0.2 },
   row: { fontSize: 17, fontWeight: "400" },
-  body: { fontSize: 15, lineHeight: 23 },
-  hint: { fontSize: 13, lineHeight: 20 },
+  body: { fontSize: 16, lineHeight: 24 },
+  hint: { fontSize: 13, lineHeight: 19 },
 } as const;
 
 /**
@@ -72,17 +111,17 @@ export const type = {
 export function hexPalette(dark: boolean) {
   return dark
     ? {
-        foreground: "#eef4f0",
-        muted: "#a3b5aa",
-        primaryForeground: "#0f1813",
-        card: "#0c130f",
-        selected: "#1d3428",
+        foreground: "#f1f2ee",
+        muted: "#a2aab2",
+        primaryForeground: INK,
+        card: "#171c22",
+        selected: "#262d35",
       }
     : {
-        foreground: "#13201a",
-        muted: "#4f6157",
-        primaryForeground: "#f4f8f5",
+        foreground: INK,
+        muted: "#535b63",
+        primaryForeground: "#ff7a2a",
         card: "#ffffff",
-        selected: "#e6f0ea",
+        selected: "#e4e6e8",
       };
 }

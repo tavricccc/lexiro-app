@@ -12,13 +12,16 @@ import {
 import { colors } from "@/lib/theme";
 import { PressableScale } from "./pressable-scale";
 
-type Variant = "primary" | "secondary" | "ghost" | "destructive";
+/** `ink` and `onField` sit on the orange field and look the same in both modes. */
+type Variant = "primary" | "secondary" | "ghost" | "destructive" | "ink" | "onField";
 
 const fills: Record<Variant, { background: ColorValue; text: ColorValue }> = {
   primary: { background: colors.primary, text: colors.primaryForeground },
   secondary: { background: colors.card, text: colors.foreground },
   ghost: { background: colors.secondary, text: colors.foreground },
   destructive: { background: colors.destructiveSoft, text: colors.destructive },
+  ink: { background: colors.fieldInk, text: colors.field },
+  onField: { background: "rgba(11,15,20,0.12)", text: colors.fieldInk },
 };
 
 /** The web app's pill: one flat fill, 50pt tall, no shadow. */
@@ -47,7 +50,7 @@ export function Button({
       accessibilityState={{ disabled: !!inactive, busy: !!busy }}
       disabled={inactive}
       onPress={() => {
-        if (variant === "primary") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (variant === "primary" || variant === "ink") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.();
       }}
       style={[
