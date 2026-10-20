@@ -439,7 +439,6 @@ export default function SetScreen() {
               <ListRow
                 icon="pencil"
                 title={t("setDetail.edit")}
-                subtitle={`${t("setEditor.name")} · ${t("setEditor.folder")}`}
                 chevron
                 onPress={() => openSheet("/sets/[setId]/settings")}
               />
