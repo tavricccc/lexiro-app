@@ -109,6 +109,16 @@ export function useRoom(code: string, name: string, enabled: boolean) {
         if (typeof message.serverNow === "number")
           setOffset(message.serverNow - Date.now());
         if (message.type === "state") setState(message as RoomState);
+        // Someone else answered: only the player list changed.
+        if (message.type === "players")
+          setState((current) =>
+            current
+              ? {
+                  ...current,
+                  players: (message as Pick<RoomState, "players">).players,
+                }
+              : current,
+          );
       };
       socket.onclose = (event) => {
         if (socketRef.current === socket) socketRef.current = null;
