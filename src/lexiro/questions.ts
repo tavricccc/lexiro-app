@@ -1,7 +1,7 @@
 import type { SenseId, StudyWord, WordKey } from "@/core/types";
 
 // Ported from lexiro/components/practice/{practice-content,meaning-questions}.ts
-// so the web and native apps build the same 英選中 / 中選英 items.
+// so the web and native apps build the same kinds of 英選中 / 中選英 items.
 
 export type WordTask = "meaning" | "reverse";
 
@@ -55,102 +55,174 @@ function meaningParts(meaning: string): string[] {
     .filter(Boolean);
 }
 
-/** 英選中: every sense may supply the answer, but none may be a distractor. */
-export function buildMeaningQuestions(
-  targets: readonly StudyWord[],
-  pool: readonly StudyWord[],
-): QuestionItem[] {
-  const bySpelling = new Map<string, { meanings: string[]; parts: Set<string> }>();
-  for (const word of pool) {
-    const spelling = normalizeWord(word.word);
-    const entry = bySpelling.get(spelling) ?? { meanings: [], parts: new Set<string>() };
-    entry.meanings.push(word.meaning.trim());
-    meaningParts(word.meaning).forEach((part) => entry.parts.add(part));
-    bySpelling.set(spelling, entry);
-  }
-  return targets.flatMap((word) => {
-    const spelling = normalizeWord(word.word);
-    const own = bySpelling.get(spelling) ?? {
-      meanings: [word.meaning.trim()],
-      parts: new Set(meaningParts(word.meaning)),
+/**
+ * The pool with every spelling and meaning split once, so building a question
+ * costs a few lookups instead of a pass over the whole library.
+ */
+interface PoolEntry {
+  spelling: string;
+  english: string;
+  meaning: string;
+  key: string;
+  parts: string[];
+}
+
+interface PreparedPool {
+  entries: PoolEntry[];
+  bySpelling: Map<string, { meanings: string[]; parts: Set<string> }>;
+}
+
+const prepared = new WeakMap<readonly StudyWord[], PreparedPool>();
+
+function preparePool(pool: readonly StudyWord[]): PreparedPool {
+  const cached = prepared.get(pool);
+  if (cached) return cached;
+  const entries = pool.map((word) => ({
+    spelling: normalizeWord(word.word),
+    english: word.word.trim(),
+    meaning: word.meaning.trim(),
+    key: meaningKey(word.meaning),
+    parts: meaningParts(word.meaning),
+  }));
+  const bySpelling = new Map<
+    string,
+    { meanings: string[]; parts: Set<string> }
+  >();
+  for (const entry of entries) {
+    const own = bySpelling.get(entry.spelling) ?? {
+      meanings: [],
+      parts: new Set<string>(),
     };
-    const acceptedMeanings = [...new Set(own.meanings)];
-    const seen = new Set<string>();
-    const distractors = seededShuffle([...pool], `meaning:${word.id}:distractors`)
-      .filter((other) => {
-        if (normalizeWord(other.word) === spelling) return false;
-        const key = meaningKey(other.meaning);
-        const parts = meaningParts(other.meaning);
-        if (
-          !key ||
-          !parts.length ||
-          parts.some((part) => own.parts.has(part)) ||
-          seen.has(key)
-        )
-          return false;
-        seen.add(key);
-        return true;
-      })
-      .slice(0, 3)
-      .map((other) => other.meaning.trim());
-    if (distractors.length !== 3) return [];
-    const id = `meaning:${word.id}`;
-    const options = seededShuffle([word.meaning.trim(), ...distractors], id);
-    return [
-      {
-        id,
-        prompt: word.word,
-        options,
-        answerIndex: options.indexOf(word.meaning.trim()),
-        wordKey: word.wordKey,
-        senseId: word.id,
-        type: "meaning" as const,
-        meaning: acceptedMeanings.join("；"),
-        acceptedMeanings,
-      },
-    ];
-  });
+    own.meanings.push(entry.meaning);
+    entry.parts.forEach((part) => own.parts.add(part));
+    bySpelling.set(entry.spelling, own);
+  }
+  const value = { entries, bySpelling };
+  prepared.set(pool, value);
+  return value;
+}
+
+/** Random draws that usually find all three distractors. */
+const QUICK_DRAWS = 24;
+
+/**
+ * Three distractors in a seeded random order: a few random draws first, then
+ * one walk round the pool from a random start for whatever is still missing.
+ */
+function pickDistractors(
+  entries: PoolEntry[],
+  seed: string,
+  accept: (entry: PoolEntry) => boolean,
+): PoolEntry[] {
+  const random = seededRandom(seed);
+  const picked: PoolEntry[] = [];
+  const tried = new Set<number>();
+  const tryIndex = (index: number) => {
+    if (tried.has(index)) return;
+    tried.add(index);
+    const entry = entries[index]!;
+    if (accept(entry)) picked.push(entry);
+  };
+  for (let draw = 0; draw < QUICK_DRAWS && picked.length < 3; draw += 1)
+    tryIndex(Math.floor(random() * entries.length));
+  const offset = Math.floor(random() * entries.length);
+  for (let step = 0; step < entries.length && picked.length < 3; step += 1)
+    tryIndex((offset + step) % entries.length);
+  return picked;
+}
+
+function dealOptions(id: string, answer: string, distractors: string[]) {
+  const options = seededShuffle([answer, ...distractors], id);
+  return { options, answerIndex: options.indexOf(answer) };
+}
+
+/** 英選中: every sense may supply the answer, but none may be a distractor. */
+function meaningQuestion(
+  word: StudyWord,
+  pool: PreparedPool,
+): QuestionItem | null {
+  const spelling = normalizeWord(word.word);
+  const own = pool.bySpelling.get(spelling) ?? {
+    meanings: [word.meaning.trim()],
+    parts: new Set(meaningParts(word.meaning)),
+  };
+  const seen = new Set<string>();
+  const distractors = pickDistractors(
+    pool.entries,
+    `meaning:${word.id}:distractors`,
+    (other) => {
+      if (
+        other.spelling === spelling ||
+        !other.key ||
+        !other.parts.length ||
+        seen.has(other.key)
+      )
+        return false;
+      if (other.parts.some((part) => own.parts.has(part))) return false;
+      seen.add(other.key);
+      return true;
+    },
+  );
+  if (distractors.length !== 3) return null;
+  const acceptedMeanings = [...new Set(own.meanings)];
+  const id = `meaning:${word.id}`;
+  return {
+    id,
+    prompt: word.word,
+    ...dealOptions(
+      id,
+      word.meaning.trim(),
+      distractors.map((other) => other.meaning),
+    ),
+    wordKey: word.wordKey,
+    senseId: word.id,
+    type: "meaning",
+    meaning: acceptedMeanings.join("；"),
+    acceptedMeanings,
+  };
 }
 
 /** 中選英: the Chinese meaning asks for one of four English words. */
-export function buildReverseQuestions(
-  targets: readonly StudyWord[],
-  pool: readonly StudyWord[],
-): QuestionItem[] {
-  return targets.flatMap((word) => {
-    const answer = word.word.trim();
-    const spelling = normalizeWord(word.word);
-    const parts = new Set(meaningParts(word.meaning));
-    if (!answer || !parts.size) return [];
-    const seen = new Set<string>([spelling]);
-    const distractors = seededShuffle([...pool], `reverse:${word.id}:distractors`)
-      .filter((other) => {
-        const key = normalizeWord(other.word);
-        if (!key || seen.has(key)) return false;
-        // A synonym would be a second right answer.
-        if (meaningParts(other.meaning).some((part) => parts.has(part)))
-          return false;
-        seen.add(key);
-        return true;
-      })
-      .slice(0, 3)
-      .map((other) => other.word.trim());
-    if (distractors.length !== 3) return [];
-    const id = `reverse:${word.id}`;
-    const options = seededShuffle([answer, ...distractors], id);
-    return [
-      {
-        id,
-        prompt: word.meaning.trim(),
-        options,
-        answerIndex: options.indexOf(answer),
-        wordKey: word.wordKey,
-        senseId: word.id,
-        type: "reverse" as const,
-        meaning: word.meaning.trim(),
-      },
-    ];
-  });
+function reverseQuestion(
+  word: StudyWord,
+  pool: PreparedPool,
+): QuestionItem | null {
+  const answer = word.word.trim();
+  const parts = new Set(meaningParts(word.meaning));
+  if (!answer || !parts.size) return null;
+  const seen = new Set<string>([normalizeWord(word.word)]);
+  const distractors = pickDistractors(
+    pool.entries,
+    `reverse:${word.id}:distractors`,
+    (other) => {
+      if (!other.spelling || seen.has(other.spelling)) return false;
+      // A synonym would be a second right answer.
+      if (other.parts.some((part) => parts.has(part))) return false;
+      seen.add(other.spelling);
+      return true;
+    },
+  );
+  if (distractors.length !== 3) return null;
+  const id = `reverse:${word.id}`;
+  return {
+    id,
+    prompt: word.meaning.trim(),
+    ...dealOptions(
+      id,
+      answer,
+      distractors.map((other) => other.english),
+    ),
+    wordKey: word.wordKey,
+    senseId: word.id,
+    type: "reverse",
+    meaning: word.meaning.trim(),
+  };
+}
+
+function buildQuestion(task: WordTask, word: StudyWord, pool: PreparedPool) {
+  return task === "meaning"
+    ? meaningQuestion(word, pool)
+    : reverseQuestion(word, pool);
 }
 
 export function isCorrectChoice(item: QuestionItem, choice: number): boolean {
@@ -168,7 +240,8 @@ export function isCorrectChoice(item: QuestionItem, choice: number): boolean {
 
 /**
  * One session: each word appears once, the chosen tasks take turns, and the
- * options are dealt in a fresh order every time.
+ * options are dealt in a fresh order every time. Only the questions the
+ * session uses are built, so a large set starts as fast as a small one.
  */
 export function buildSession(
   targets: readonly StudyWord[],
@@ -176,36 +249,29 @@ export function buildSession(
   tasks: readonly WordTask[],
   amount: number,
 ): QuestionItem[] {
-  const shuffled = seededShuffle([...targets], String(Math.random()));
-  const byTask = tasks.map((task) =>
-    task === "meaning"
-      ? buildMeaningQuestions(shuffled, pool)
-      : buildReverseQuestions(shuffled, pool),
-  );
-  const cursors = byTask.map(() => 0);
+  if (!tasks.length) return [];
+  const ready = preparePool(pool);
   const used = new Set<string>();
   const session: QuestionItem[] = [];
-  let advanced = true;
-  while (session.length < amount && advanced) {
-    advanced = false;
-    byTask.forEach((items, index) => {
-      while (session.length < amount && cursors[index]! < items.length) {
-        const item = items[cursors[index]!]!;
-        cursors[index] = cursors[index]! + 1;
-        if (used.has(item.wordKey)) continue;
-        used.add(item.wordKey);
-        const order = seededShuffle(
-          item.options.map((_, i) => i),
-          `${item.id}:${Math.random()}`,
-        );
-        session.push({
-          ...item,
-          options: order.map((i) => item.options[i]!),
-          answerIndex: order.indexOf(item.answerIndex),
-        });
-        advanced = true;
-        break;
-      }
+  let turn = 0;
+  for (const word of seededShuffle([...targets], String(Math.random()))) {
+    if (session.length >= amount) break;
+    if (used.has(word.wordKey)) continue;
+    // The word takes the next task in turn, or another task it can make.
+    let item: QuestionItem | null = null;
+    for (let offset = 0; offset < tasks.length && !item; offset += 1)
+      item = buildQuestion(tasks[(turn + offset) % tasks.length]!, word, ready);
+    if (!item) continue;
+    used.add(word.wordKey);
+    turn += 1;
+    const order = seededShuffle(
+      item.options.map((_, i) => i),
+      `${item.id}:${Math.random()}`,
+    );
+    session.push({
+      ...item,
+      options: order.map((i) => item.options[i]!),
+      answerIndex: order.indexOf(item.answerIndex),
     });
   }
   return session;
@@ -217,11 +283,13 @@ export function availableCount(
   pool: readonly StudyWord[],
   tasks: readonly WordTask[],
 ): number {
+  const ready = preparePool(pool);
   const words = new Set<string>();
-  for (const task of tasks)
-    for (const item of task === "meaning"
-      ? buildMeaningQuestions(targets, pool)
-      : buildReverseQuestions(targets, pool))
-      words.add(item.wordKey);
+  for (const word of targets)
+    if (
+      !words.has(word.wordKey) &&
+      tasks.some((task) => buildQuestion(task, word, ready))
+    )
+      words.add(word.wordKey);
   return words.size;
 }

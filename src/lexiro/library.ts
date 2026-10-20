@@ -25,10 +25,17 @@ export function studyWordsFor(state: LibraryState, setId: string): StudyWord[] {
 }
 
 /** Every sense in the library: the distractor pool for word questions. */
+// One array per library state, so the question builder's prepared pool is reused.
+const pools = new WeakMap<LibraryState, StudyWord[]>();
+
 export function allStudyWords(state: LibraryState): StudyWord[] {
-  return Object.values(state.words).flatMap((word) =>
+  const cached = pools.get(state);
+  if (cached) return cached;
+  const pool = Object.values(state.words).flatMap((word) =>
     word.senses.map((sense) => senseToStudyWord(word, sense)),
   );
+  pools.set(state, pool);
+  return pool;
 }
 
 /** One row per word in a set, with its senses in membership order. */
