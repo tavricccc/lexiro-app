@@ -5,6 +5,7 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    // src/core is synced from the web repo and linted there.
+    ignores: ["dist/*", "src/core/*"],
   }
 ]);
