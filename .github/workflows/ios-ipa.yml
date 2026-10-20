@@ -1,0 +1,57 @@
+name: iOS IPA
+
+# Builds an unsigned Release .ipa for sideloading (AltStore, SideStore,
+# Sideloadly and similar tools re-sign it with the user's Apple ID).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate the native iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Archive without signing
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -workspace Lexiro.xcworkspace \
+            -scheme Lexiro \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/Lexiro.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | tail -n 200
+
+      - name: Package the .ipa
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$RUNNER_TEMP/Lexiro.xcarchive/Products/Applications/Lexiro.app" "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa"
+          zip -qry "$GITHUB_WORKSPACE/Lexiro-${GITHUB_SHA::7}.ipa" Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lexiro-ipa
+          path: Lexiro-*.ipa
+          retention-days: 14
