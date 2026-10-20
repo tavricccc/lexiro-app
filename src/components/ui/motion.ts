@@ -1,13 +1,9 @@
-import { FadeIn, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+import { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 
-/** Content rises into place, each item a beat after the one before. */
-export const rise = (index = 0) =>
-  FadeInDown.delay(Math.min(index, 8) * 45)
-    .springify()
-    .damping(20)
-    .stiffness(220);
-
-/** Swapping one view for another, such as a tab panel. */
+/**
+ * Swapping one view for another, such as a tab panel, or a row being added.
+ * Pages themselves appear at once: Screen skips entering on first mount.
+ */
 export const swapIn = FadeIn.duration(220);
 export const swapOut = FadeOut.duration(120);
 

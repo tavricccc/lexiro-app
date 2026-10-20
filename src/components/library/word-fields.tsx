@@ -2,7 +2,7 @@ import { StyleSheet, Text } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { ActionRow, InputRow, ListGroup, TextBlockRow } from "@/components/ui/list";
-import { glide, rise } from "@/components/ui/motion";
+import { glide, swapIn } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { randomUUID } from "@/core/lib/id";
 import type { WordDraft } from "@/core/types";
@@ -87,7 +87,7 @@ export function WordFields({
 
   return (
     <>
-      <Animated.View entering={rise(0)} layout={glide}>
+      <Animated.View entering={swapIn} layout={glide}>
         <ListGroup iconInset={false}>
           <InputRow
             label={t("setEditor.word")}
@@ -103,7 +103,7 @@ export function WordFields({
       {draft.senses.map((sense, index) => (
         <Animated.View
           key={sense.id}
-          entering={rise(index + 1)}
+          entering={swapIn}
           exiting={FadeOut.duration(160)}
           layout={glide}
         >

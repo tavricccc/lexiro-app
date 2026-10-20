@@ -9,7 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
-import { rise } from "@/components/ui/motion";
+import { swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
 import { allStudyWords, studyWordsFor } from "@/lexiro/library";
@@ -140,7 +140,7 @@ export default function SessionScreen() {
               {missed.map((entry, missIndex) => (
                 <Animated.View
                   key={entry.id}
-                  entering={rise(missIndex + 3)}
+                  entering={swapIn}
                   style={styles.reviewItem}
                 >
                   <Text style={styles.reviewPrompt}>{entry.prompt}</Text>
@@ -231,7 +231,7 @@ export default function SessionScreen() {
                   ? "wrong"
                   : "dim";
             return (
-              <Animated.View key={`${item!.id}:${optionIndex}`} entering={rise(optionIndex + 1)}>
+              <Animated.View key={`${item!.id}:${optionIndex}`} entering={swapIn}>
                 <AnswerOption label={option} state={state} onPress={() => choose(optionIndex)} />
               </Animated.View>
             );

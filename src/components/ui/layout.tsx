@@ -10,6 +10,8 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { LayoutAnimationConfig } from "react-native-reanimated";
+
 import { colors, radius, space, type } from "@/lib/theme";
 
 const reading = require("../../../assets/illustrations/reading.svg");
@@ -23,7 +25,7 @@ export function Screen({ children, ...props }: ScrollViewProps & { children: Rea
       {...props}
       contentContainerStyle={[styles.content, props.contentContainerStyle]}
     >
-      {children}
+      <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
     </ScrollView>
   );
 }

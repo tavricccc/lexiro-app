@@ -7,7 +7,7 @@ import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Illustration, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { rise } from "@/components/ui/motion";
+import { swapIn } from "@/components/ui/motion";
 import { Segmented } from "@/components/ui/segmented";
 import { senseCount } from "@/lexiro/library";
 import { useLibraryStore } from "@/core/stores/library-store";
@@ -56,7 +56,7 @@ export default function TodayScreen() {
     >
       <Segmented options={TABS} value={tab} onChange={setTab} />
 
-      <Animated.View key={tab} entering={rise(0)} style={styles.panel}>
+      <Animated.View key={tab} entering={swapIn} style={styles.panel}>
         {tab === "tasks" ? (
           latest ? (
             <>
@@ -86,7 +86,7 @@ export default function TodayScreen() {
                   />
                 </View>
               </Card>
-              <Animated.View entering={rise(1)} style={styles.totals}>
+              <Animated.View entering={swapIn} style={styles.totals}>
                 <Total value={totals.sets} label="單字集" />
                 <Total value={totals.senses} label="詞義" />
                 <Total value={totals.questions} label="題目" />
@@ -103,7 +103,7 @@ export default function TodayScreen() {
               </Card>
               <View style={styles.steps}>
                 {STEPS.map((step, index) => (
-                  <Animated.View key={step.title} entering={rise(index + 1)} style={styles.step}>
+                  <Animated.View key={step.title} entering={swapIn} style={styles.step}>
                     <View style={styles.stepMark}>
                       <Text style={styles.stepNumber}>{index + 1}</Text>
                     </View>

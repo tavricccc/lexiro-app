@@ -7,7 +7,7 @@ import { FormScreen, SheetHeader } from "@/components/form-sheet";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/layout";
-import { rise } from "@/components/ui/motion";
+import { swapIn } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import {
   createSetShareLink,
@@ -68,13 +68,13 @@ export default function ShareLinkScreen() {
   return (
     <FormScreen>
       <SheetHeader title={t("share.title")} busy={busy} onCancel={() => router.back()} />
-      <Animated.View entering={rise(0)}>
+      <Animated.View entering={swapIn}>
         <Text style={styles.description}>{t("share.description")}</Text>
       </Animated.View>
       {loading ? (
         <ActivityIndicator />
       ) : link ? (
-        <Animated.View entering={rise(1)} style={styles.stack}>
+        <Animated.View entering={swapIn} style={styles.stack}>
           <Card style={styles.link}>
             <Text style={styles.label}>{t("share.linkLabel")}</Text>
             <Text selectable style={styles.url}>
@@ -100,7 +100,7 @@ export default function ShareLinkScreen() {
           <Text style={styles.hint}>{t("share.revokeHint")}</Text>
         </Animated.View>
       ) : (
-        <Animated.View entering={rise(1)}>
+        <Animated.View entering={swapIn}>
           <Button
             label={t(busy ? "share.creating" : "share.create")}
             icon="link"

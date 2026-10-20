@@ -8,7 +8,7 @@ import { setFolderOptions } from "@/components/library/folder-options";
 import { ExampleRows } from "@/components/library/word-fields";
 import { ResumeChoice } from "@/components/resume-choice";
 import { ActionRow, InputRow, ListGroup, PickerRow } from "@/components/ui/list";
-import { glide, rise } from "@/components/ui/motion";
+import { glide, swapIn } from "@/components/ui/motion";
 import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
@@ -122,7 +122,7 @@ export default function NewSetScreen() {
         onSave={() => void save()}
         onCancel={() => leaveFlow(saved.persistence, saved.clear)}
       />
-      <Animated.View entering={rise(0)}>
+      <Animated.View entering={swapIn}>
         <ListGroup>
           <InputRow
             label={t("setEditor.name")}
@@ -148,7 +148,7 @@ export default function NewSetScreen() {
         return (
           <Animated.View
             key={row.key}
-            entering={rise(index + 1)}
+            entering={swapIn}
             exiting={FadeOut.duration(160)}
             layout={glide}
           >

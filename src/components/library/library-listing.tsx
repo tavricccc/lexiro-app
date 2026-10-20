@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { showActionSheet } from "@/components/ui/menu";
-import { glide, rise } from "@/components/ui/motion";
+import { glide, swapIn } from "@/components/ui/motion";
 import {
   ALL_FOLDER_ID,
   collectFolderIds,
@@ -216,7 +216,7 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
         ) : missing ? (
           <EmptyState illustrated={false} title={t("library.emptyFolderTitle")} body={t("setDetail.missingDescription")} />
         ) : status !== "ready" ? null : !listEmpty ? (
-          <Animated.View entering={rise(0)} layout={glide}>
+          <Animated.View entering={swapIn} layout={glide}>
             <ListGroup>
               {[
                 ...(needle ? [] : childFolders).map((folder) => (

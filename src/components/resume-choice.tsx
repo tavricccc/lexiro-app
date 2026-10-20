@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 import { Button } from "@/components/ui/button";
-import { rise } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
 import { colors, type } from "@/lib/theme";
 
@@ -21,18 +20,18 @@ export function ResumeChoice({
 }) {
   return (
     <View style={styles.root}>
-      <Animated.View entering={rise(0)} style={styles.mark}>
+      <Animated.View style={styles.mark}>
         <SymbolView
           name={invalid ? "exclamationmark.triangle" : "clock.arrow.circlepath"}
           size={30}
           tintColor={colors.brand}
         />
       </Animated.View>
-      <Animated.View entering={rise(1)} style={styles.text}>
+      <Animated.View style={styles.text}>
         <Text style={styles.title}>{t(invalid ? "draft.invalidTitle" : "draft.title")}</Text>
         <Text style={styles.body}>{description}</Text>
       </Animated.View>
-      <Animated.View entering={rise(2)} style={styles.actions}>
+      <Animated.View style={styles.actions}>
         {invalid ? null : <Button label={t("draft.resume")} onPress={onResume} />}
         <Button
           label={t("draft.restart")}

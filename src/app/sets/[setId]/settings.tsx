@@ -7,7 +7,7 @@ import { FormScreen, SheetHeader, leaveFlow } from "@/components/form-sheet";
 import { setFolderOptions } from "@/components/library/folder-options";
 import { ResumeChoice } from "@/components/resume-choice";
 import { InputRow, ListGroup, PickerRow } from "@/components/ui/list";
-import { rise } from "@/components/ui/motion";
+import { swapIn } from "@/components/ui/motion";
 import { useResumableDraft } from "@/core/components/ai/use-resumable-draft";
 import { UNCATEGORIZED_FOLDER_ID } from "@/core/lib/folders";
 import { t } from "@/core/lib/i18n";
@@ -104,7 +104,7 @@ function SettingsFlow({
         onSave={() => void save()}
         onCancel={() => leaveFlow(saved.persistence, saved.clear)}
       />
-      <Animated.View entering={rise(0)}>
+      <Animated.View entering={swapIn}>
         <ListGroup>
           <InputRow
             label={t("setEditor.name")}
