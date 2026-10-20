@@ -1,6 +1,6 @@
 import { SymbolView } from "expo-symbols";
 import { useEffect } from "react";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,16 +13,22 @@ import Animated, {
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { colors, radius, space } from "@/lib/theme";
 
-export type OptionState = "idle" | "right" | "wrong" | "dim";
+/** `chosen` is a pick still waiting for its reveal, as in a live room. */
+export type OptionState = "idle" | "chosen" | "right" | "wrong" | "dim";
 
 /** One answer: the right one pops, a wrong pick shakes, the rest step back. */
 export function AnswerOption({
   label,
+  note,
   state,
+  disabled,
   onPress,
 }: {
   label: string;
+  /** A line under the option, such as the blank it already fills. */
+  note?: string;
   state: OptionState;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const scale = useSharedValue(1);
@@ -37,6 +43,13 @@ export function AnswerOption({
           withSpring(1, { damping: 12, stiffness: 220 }),
         ),
       );
+    if (state === "chosen")
+      scale.set(
+        withSequence(
+          withSpring(0.97, { damping: 14, stiffness: 500 }),
+          withSpring(1, { damping: 14, stiffness: 260 }),
+        ),
+      );
     if (state === "wrong")
       shift.set(
         withSequence(
@@ -47,36 +60,51 @@ export function AnswerOption({
           withTiming(0, { duration: 50 }),
         ),
       );
-    fade.set(withTiming(state === "dim" ? 0.5 : 1, { duration: 220 }));
-  }, [state, scale, shift, fade]);
+    fade.set(
+      withTiming(state === "dim" || disabled ? 0.5 : 1, { duration: 220 }),
+    );
+  }, [state, disabled, scale, shift, fade]);
 
   const motion = useAnimatedStyle(() => ({
     opacity: fade.value,
     transform: [{ translateX: shift.value }, { scale: scale.value }],
   }));
 
-  const answered = state !== "idle";
+  const answered = state !== "idle" || Boolean(disabled);
   return (
     <Animated.View style={motion}>
       <PressableScale
         scaleTo={0.97}
         accessibilityRole="button"
-        accessibilityState={{ disabled: answered, selected: state === "wrong" }}
+        accessibilityState={{
+          disabled: answered,
+          selected: state === "chosen" || state === "wrong",
+        }}
         disabled={answered}
         onPress={onPress}
         style={[
           styles.option,
+          state === "chosen" && styles.chosen,
           state === "right" && styles.right,
           state === "wrong" && styles.wrong,
         ]}
       >
-        <Text style={styles.text}>{label}</Text>
+        <View style={styles.body}>
+          <Text style={styles.text}>{label}</Text>
+          {note ? <Text style={styles.note}>{note}</Text> : null}
+        </View>
         {state === "right" || state === "wrong" ? (
           <Animated.View entering={ZoomIn.springify().damping(12)}>
             <SymbolView
-              name={state === "right" ? "checkmark.circle.fill" : "xmark.circle.fill"}
+              name={
+                state === "right"
+                  ? "checkmark.circle.fill"
+                  : "xmark.circle.fill"
+              }
               size={24}
-              tintColor={state === "right" ? colors.success : colors.destructive}
+              tintColor={
+                state === "right" ? colors.success : colors.destructive
+              }
             />
           </Animated.View>
         ) : null}
@@ -97,7 +125,10 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     backgroundColor: colors.card,
   },
+  chosen: { backgroundColor: colors.selected },
   right: { backgroundColor: colors.successSoft },
   wrong: { backgroundColor: colors.destructiveSoft },
-  text: { flex: 1, fontSize: 17, lineHeight: 24, color: colors.foreground },
+  body: { flex: 1, gap: 2 },
+  text: { fontSize: 17, lineHeight: 24, color: colors.foreground },
+  note: { fontSize: 13, lineHeight: 18, color: colors.muted },
 });

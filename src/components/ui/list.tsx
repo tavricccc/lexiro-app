@@ -169,12 +169,14 @@ export function SwitchRow({
   subtitle,
   icon,
   value,
+  disabled,
   onValueChange,
 }: {
   title: string;
   subtitle?: string;
   icon?: SymbolViewProps["name"];
   value: boolean;
+  disabled?: boolean;
   onValueChange: (value: boolean) => void;
 }) {
   return (
@@ -183,7 +185,12 @@ export function SwitchRow({
       subtitle={subtitle}
       icon={icon}
       accessory={
-        <Switch value={value} onValueChange={onValueChange} trackColor={{ true: BRAND_LIGHT }} />
+        <Switch
+          value={value}
+          disabled={disabled}
+          onValueChange={onValueChange}
+          trackColor={{ true: BRAND_LIGHT }}
+        />
       }
     />
   );
