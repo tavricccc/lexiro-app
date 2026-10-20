@@ -1,3 +1,22 @@
+import {
+  Divider,
+  HStack,
+  Host,
+  Menu,
+  Picker,
+  Spacer,
+  Text as SwiftText,
+  Toggle,
+} from "@expo/ui/swift-ui";
+import {
+  accessibilityLabel,
+  contentShape,
+  frame,
+  menuActionDismissBehavior,
+  pickerStyle,
+  shapes,
+  tag,
+} from "@expo/ui/swift-ui/modifiers";
 import * as Haptics from "expo-haptics";
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
@@ -14,7 +33,6 @@ import {
 import Animated, { ZoomIn, ZoomOut } from "react-native-reanimated";
 
 import { BRAND_LIGHT, colors, radius, space, type } from "@/lib/theme";
-import { showActionSheet } from "./menu";
 
 const ICON_INSET = space.row + 24 + 14;
 
@@ -121,7 +139,11 @@ export function ListRow({
           </Text>
         ) : null}
       </View>
-      {detail ? <Text style={styles.detail}>{detail}</Text> : null}
+      {detail ? (
+        <Text style={styles.detail} numberOfLines={1}>
+          {detail}
+        </Text>
+      ) : null}
       {accessory}
       {chevron ? (
         <SymbolView
@@ -353,7 +375,43 @@ export function ActionRow({
   );
 }
 
-/** Picks one option from a native action sheet; shows the current choice on the right. */
+/**
+ * The row itself opens the native iOS menu: a transparent SwiftUI menu laid
+ * over it, so the menu unfolds from the row instead of a centred sheet.
+ */
+function RowMenu({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Host style={StyleSheet.absoluteFill}>
+      <Menu
+        label={
+          <HStack
+            modifiers={[
+              // The bridge has no infinity; this is "as large as the row".
+              frame({ maxWidth: 10_000, maxHeight: 10_000 }),
+              contentShape(shapes.rectangle()),
+            ]}
+          >
+            <Spacer />
+          </HStack>
+        }
+        modifiers={[accessibilityLabel(label)]}
+      >
+        {children}
+      </Menu>
+    </Host>
+  );
+}
+
+const menuChevron = (
+  <SymbolView
+    name="chevron.up.chevron.down"
+    size={13}
+    weight="semibold"
+    tintColor={colors.faint}
+  />
+);
+
+/** Picks one option from a menu that opens from the row; the current one is checked. */
 export function PickerRow<T extends string>({
   title,
   icon,
@@ -371,36 +429,95 @@ export function PickerRow<T extends string>({
 }) {
   const current = options.find((option) => option.value === value);
   return (
-    <ListRow
-      title={title}
-      icon={icon}
-      detail={current?.label}
-      accessory={
-        <SymbolView
-          name="chevron.up.chevron.down"
-          size={13}
-          weight="semibold"
-          tintColor={colors.faint}
+    <View style={disabled && styles.disabled}>
+      <ListRow
+        title={title}
+        icon={icon}
+        detail={current?.label}
+        accessory={menuChevron}
+      />
+      {disabled ? null : (
+        <RowMenu label={title}>
+          <Picker
+            selection={value}
+            onSelectionChange={(next: T) => {
+              void Haptics.selectionAsync();
+              onChange(next);
+            }}
+            modifiers={[pickerStyle("inline")]}
+          >
+            {options.map((option) => (
+              <SwiftText key={option.value} modifiers={[tag(option.value)]}>
+                {option.label}
+              </SwiftText>
+            ))}
+          </Picker>
+        </RowMenu>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Several values from one menu, with an "all" choice that clears them.
+ * Ticking a value keeps the menu open, so a few can be chosen in one go.
+ */
+export function MultiPickerRow({
+  title,
+  icon,
+  allLabel,
+  summary,
+  value,
+  options,
+  onChange,
+}: {
+  title: string;
+  icon?: SymbolViewProps["name"];
+  allLabel: string;
+  /** What the row shows for the current choice. */
+  summary: string;
+  value: readonly string[];
+  options: readonly { value: string; label: string }[];
+  onChange: (value: string[]) => void;
+}) {
+  return (
+    <View>
+      <ListRow
+        title={title}
+        icon={icon}
+        detail={summary}
+        accessory={menuChevron}
+      />
+      <RowMenu label={title}>
+        <Toggle
+          label={allLabel}
+          isOn={!value.length}
+          onIsOnChange={() => {
+            void Haptics.selectionAsync();
+            onChange([]);
+          }}
         />
-      }
-      onPress={
-        disabled
-          ? undefined
-          : () =>
-              showActionSheet({
-                title,
-                actions: options.map((option) => ({
-                  label: option.label,
-                  // The current choice is shown greyed out, as iOS has no checkmark here.
-                  disabled: option.value === value,
-                  onSelect: () => {
-                    void Haptics.selectionAsync();
-                    onChange(option.value);
-                  },
-                })),
-              })
-      }
-    />
+        <Divider />
+        {options.map((option) => (
+          <Toggle
+            key={option.value}
+            label={option.label}
+            isOn={value.includes(option.value)}
+            onIsOnChange={(on) => {
+              void Haptics.selectionAsync();
+              onChange(
+                options
+                  .map((entry) => entry.value)
+                  .filter((entry) =>
+                    entry === option.value ? on : value.includes(entry),
+                  ),
+              );
+            }}
+            modifiers={[menuActionDismissBehavior("disabled")]}
+          />
+        ))}
+      </RowMenu>
+    </View>
   );
 }
 
@@ -437,7 +554,13 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   title: { ...type.row, color: colors.foreground },
   subtitle: { ...type.hint, color: colors.muted },
-  detail: { fontSize: 17, color: colors.muted, fontVariant: ["tabular-nums"] },
+  detail: {
+    flexShrink: 1,
+    maxWidth: "55%",
+    fontSize: 17,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
+  },
   check: { width: 22, alignItems: "center" },
   disabled: { opacity: 0.4 },
   inputLabel: { ...type.row, color: colors.foreground, width: 92 },
