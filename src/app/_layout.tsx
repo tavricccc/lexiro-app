@@ -71,6 +71,7 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: canvas },
           }}
         />
+        <Stack.Screen name="sets" options={{ presentation: "modal" }} />
         <Stack.Screen
           name="session"
           options={{ presentation: "fullScreenModal", gestureEnabled: false }}
