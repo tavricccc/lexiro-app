@@ -437,7 +437,7 @@ export default function SetScreen() {
             )}
           </Animated.View>
         ) : (
-          <Animated.View key="tools" entering={swapIn}>
+          <Animated.View key="tools" entering={swapIn} style={styles.stack}>
             <ListGroup title={t("setDetail.toolsHeader")}>
               <ListRow
                 icon="plus.circle"
