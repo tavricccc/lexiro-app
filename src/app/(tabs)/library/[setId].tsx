@@ -5,6 +5,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 import { setFolderOptions } from "@/components/library/folder-options";
+import { confirmDeleteQuestion } from "@/components/questions/delete-question";
 import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
@@ -381,7 +382,21 @@ export default function SetScreen() {
                   }
                 >
                   {visibleQuestions.slice(0, limit).map((question) => (
-                    <View key={question.id} style={styles.word}>
+                    <Pressable
+                      key={question.id}
+                      accessibilityRole="button"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/sets/[setId]/questions/[questionId]",
+                          params: { setId, questionId: question.id },
+                        })
+                      }
+                      onLongPress={() => confirmDeleteQuestion(question.id)}
+                      style={({ pressed }) => [
+                        styles.word,
+                        pressed && styles.pressed,
+                      ]}
+                    >
                       <View style={styles.wordBody}>
                         <Text style={styles.questionMeta}>
                           <Text style={styles.pos}>
@@ -408,7 +423,13 @@ export default function SetScreen() {
                           </Text>
                         ) : null}
                       </View>
-                    </View>
+                      <SymbolView
+                        name="chevron.right"
+                        size={13}
+                        weight="semibold"
+                        tintColor={colors.faint}
+                      />
+                    </Pressable>
                   ))}
                 </ListGroup>
                 {!needle ? (
