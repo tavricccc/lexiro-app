@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,14 +10,22 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { LayoutAnimationConfig } from "react-native-reanimated";
+import Animated, { LayoutAnimationConfig } from "react-native-reanimated";
 
 import { colors, radius, space, type } from "@/lib/theme";
+import { swapIn } from "./motion";
+import { useTransitionDone } from "./use-transition-done";
 
 const reading = require("../../../assets/illustrations/reading.svg");
 
-/** A scrolling page on the canvas, under the native large title. */
+/**
+ * A scrolling page on the canvas, under the native large title. The body
+ * waits for the page's transition, so the tap is answered at once and the
+ * content fades in after; anything inside appears without its own entrance.
+ */
 export function Screen({ children, ...props }: ScrollViewProps & { children: ReactNode }) {
+  const ready = useTransitionDone();
+  const [instant] = useState(ready);
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
@@ -25,7 +33,11 @@ export function Screen({ children, ...props }: ScrollViewProps & { children: Rea
       {...props}
       contentContainerStyle={[styles.content, props.contentContainerStyle]}
     >
-      <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
+      {ready ? (
+        <Animated.View entering={instant ? undefined : swapIn} style={styles.body}>
+          <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
+        </Animated.View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -72,7 +84,8 @@ export function EmptyState({
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.canvas },
-  content: { padding: space.gutter, paddingBottom: 48, gap: space.section },
+  content: { padding: space.gutter, paddingBottom: 48 },
+  body: { gap: space.section },
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.card,
