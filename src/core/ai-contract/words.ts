@@ -41,6 +41,11 @@ const PART_OF_SPEECH_ALIASES: Record<string, string> = {
   phrase: "phr.",
 };
 
+/** Canonical part-of-speech values that normalizePartOfSpeech can return. */
+export const SUPPORTED_PARTS_OF_SPEECH: readonly string[] = [
+  ...new Set(Object.values(PART_OF_SPEECH_ALIASES)),
+];
+
 export function normalizePartOfSpeech(pos: string): string {
   const normalized = pos.trim().toLocaleLowerCase().replace(/\s+/g, " ");
   return PART_OF_SPEECH_ALIASES[normalized] ?? "";

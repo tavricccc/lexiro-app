@@ -66,15 +66,27 @@ const normalized = (text: string): string =>
   text.trim().toLocaleLowerCase().replaceAll("’", "'");
 const tokens = (text: string): string[] =>
   normalized(text).match(/\p{L}+(?:['-]\p{L}+)*/gu) ?? [];
+// Dictionary slot markers: sb/sth, one's, and grammar slots such as V-ing.
 const placeholder = (word: string): boolean =>
   /^(?:sb|sth|somebody|someone|something)(?:'s)?$/.test(word) ||
-  word === "one's";
+  /^(?:one's|v|v-ing|ving|v-ed|ved|n|adj|adv)$/.test(word);
+const REFLEXIVES = new Set([
+  "myself",
+  "yourself",
+  "himself",
+  "herself",
+  "itself",
+  "ourselves",
+  "yourselves",
+  "themselves",
+]);
 
 /** A source POS describes the taught sense, not every legal use of its lemma. */
 function hasWordForm(source: string, surface: string, posHint = ""): boolean {
   const word = spelling(normalized(source));
   const candidate = spelling(normalized(surface));
   if (candidate === word) return true;
+  if (word === "oneself") return REFLEXIVES.has(candidate);
 
   if (!/\s/.test(candidate)) {
     if (VERB_VARIANTS[candidate]?.includes(word)) return true;
@@ -145,13 +157,49 @@ function hasPhraseUsage(source: string[], usage: string[]): boolean {
   return true;
 }
 
+/**
+ * Readings of a dictionary entry: parenthesized parts such as "(of...)" are
+ * optional, and slash alternatives such as "get/be used to" or "a/an" each
+ * form a complete entry on their own.
+ */
+function entryReadings(source: string): string[] {
+  const bare = source.replace(/\([^)]*\)/gu, " ").trim() || source;
+  let readings = [""];
+  for (const part of bare.split(/\s+/u)) {
+    const choices = part.includes("/") ? part.split("/").filter(Boolean) : [part];
+    readings = readings
+      .flatMap((reading) => choices.map((choice) => `${reading} ${choice}`))
+      .slice(0, 16);
+  }
+  return readings.map((reading) => reading.trim());
+}
+
+/** Messages are Chinese for the app; the Agent contract asks for English. */
 export function sourceWordFormIssue(
   source: string,
   pos: string,
   answer: string,
   usage?: string,
+  language: "zh" | "en" = "zh",
 ): string | null {
-  const sourceWords = tokens(source);
+  let first: string | null = null;
+  for (const reading of entryReadings(source)) {
+    const issue = readingIssue(source, reading, pos, answer, usage, language);
+    if (!issue) return null;
+    first ??= issue;
+  }
+  return first;
+}
+
+function readingIssue(
+  source: string,
+  reading: string,
+  pos: string,
+  answer: string,
+  usage: string | undefined,
+  language: "zh" | "en",
+): string | null {
+  const sourceWords = tokens(reading);
   const candidate = normalized(answer);
   const answerWords = tokens(candidate);
   const fixedSource = sourceWords.filter((word) => !placeholder(word));
@@ -176,7 +224,9 @@ export function sourceWordFormIssue(
               fixedSource.some((word) => hasWordForm(word, part)),
             ));
   if (!related)
-    return `「${answer}」不是指定單字「${source}」的合法詞形；請保留來源單字，不要換成同義詞或衍生詞`;
+    return language === "en"
+      ? `"${answer}" is not a form of the source "${source}"; use an inflection of the source itself, not a synonym or derived word`
+      : `「${answer}」不是指定單字「${source}」的合法詞形；請保留來源單字，不要換成同義詞或衍生詞`;
   // Vocabulary and word-bank replies anchor a phrase with its complete
   // actual usage, even when the answer removes only a contiguous part.
   if (
@@ -184,6 +234,8 @@ export function sourceWordFormIssue(
     sourceWords.length > 1 &&
     !hasPhraseUsage(sourceWords, tokens(usage))
   )
-    return `「${usage}」沒有保留來源片語「${source}」的組成；請使用實際詞形並保留片語中的字詞`;
+    return language === "en"
+      ? `usage "${usage}" does not contain the words of the source phrase "${source}"; keep every fixed word of the phrase (inflected forms are fine)`
+      : `「${usage}」沒有保留來源片語「${source}」的組成；請使用實際詞形並保留片語中的字詞`;
   return null;
 }

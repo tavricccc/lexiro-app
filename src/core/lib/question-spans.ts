@@ -19,20 +19,33 @@ export function wordOccurrences(haystack: string, needle: string): number[] {
 }
 
 /** The supplied usage anchors the answer; prose outside it may repeat a word. */
+/** Messages are Chinese for the app; the Agent contract asks for English. */
 export function locateUsageAnswer(
   prose: string,
   usage: string,
   answer: string,
+  language: "zh" | "en" = "zh",
 ): { at: number } | { issue: string } {
-  if (!usage.trim()) return { issue: "缺少目標用法 usage" };
+  const en = language === "en";
+  if (!usage.trim())
+    return { issue: en ? "usage is empty" : "缺少目標用法 usage" };
   const usages = wordOccurrences(prose, usage);
-  if (usages.length !== 1) return { issue: "目標用法必須在原文恰好出現一次" };
+  if (usages.length !== 1)
+    return {
+      issue: en
+        ? `"${usage}" occurs ${usages.length} times in the text; ${usages.length ? "give a longer usage that occurs exactly once" : "answer and usage must be copied exactly from the text"}`
+        : "目標用法必須在原文恰好出現一次",
+    };
   const answers = wordOccurrences(usage, answer);
   if (answers.length !== 1)
     return {
       issue: answers.length
-        ? `答案在目標用法中出現 ${answers.length} 次，必須恰好一次`
-        : "答案必須位於目標用法內且不超出範圍",
+        ? en
+          ? `answer "${answer}" occurs ${answers.length} times inside usage "${usage}"; it must occur exactly once`
+          : `答案在目標用法中出現 ${answers.length} 次，必須恰好一次`
+        : en
+          ? `answer "${answer}" is not inside usage "${usage}" as whole words`
+          : "答案必須位於目標用法內且不超出範圍",
     };
   return { at: usages[0] + answers[0] };
 }
