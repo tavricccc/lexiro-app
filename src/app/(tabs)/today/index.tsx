@@ -11,6 +11,7 @@ import { Screen } from "@/components/ui/layout";
 import { enterUp, pop } from "@/components/ui/motion";
 import { senseCount } from "@/lexiro/library";
 import { useLibraryStore } from "@/core/stores/library-store";
+import { useLastPracticedSetId } from "@/lib/last-practiced";
 import { colors, isLatin, latin, radius, type } from "@/lib/theme";
 
 const STEPS = [
@@ -33,14 +34,19 @@ const openSet = (setId: string) =>
 
 export default function TodayScreen() {
   const library = useLibraryStore((store) => store.state);
+  const lastPracticedId = useLastPracticedSetId();
 
-  const latest = useMemo(
-    () =>
-      [...library.sets].sort((a, b) =>
-        b.updatedAt.localeCompare(a.updatedAt),
-      )[0],
-    [library.sets],
-  );
+  // 接著練 follows the last set practiced on this device, and otherwise the
+  // most recently changed set.
+  const latest = useMemo(() => {
+    const remembered = lastPracticedId
+      ? library.sets.find((set) => set.id === lastPracticedId)
+      : undefined;
+    return (
+      remembered ??
+      [...library.sets].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
+    );
+  }, [lastPracticedId, library.sets]);
   const totals = useMemo(
     () => ({
       sets: library.sets.length,

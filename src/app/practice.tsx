@@ -38,6 +38,7 @@ import { usePracticeSetupChoices } from "@/core/components/practice/use-practice
 import { PRACTICE_TASKS } from "@/core/constants";
 import { t } from "@/core/lib/i18n";
 import { clearPracticeDraft } from "@/core/lib/practice-storage";
+import { rememberPracticedSet } from "@/lib/last-practiced";
 import { practiceTaskHint, practiceTaskLabel } from "@/core/lib/practice-tasks";
 import { difficultyOptions } from "@/core/lib/question-options";
 import { isPassageKind } from "@/core/lib/question-formats";
@@ -287,6 +288,7 @@ function PracticeSetup() {
     if (!entries.length) return;
     setup.clear();
     handOffRun({ choices, entries });
+    if (setIds.length) rememberPracticedSet(setIds[0]);
     router.push("/session");
   };
 
