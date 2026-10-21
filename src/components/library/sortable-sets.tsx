@@ -1,6 +1,14 @@
 import * as Haptics from "expo-haptics";
-import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { Link } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -45,11 +53,11 @@ interface DragState {
   active: SharedValue<boolean>;
 }
 
+type Metrics = { senseCount: number; questionCount: number };
+
 const NO_METRICS = { questionCount: 0, senseCount: 0 };
 /** The gap between rows, which a displaced row also has to clear. */
 const ROW_GAP = 8;
-/** A touch that travels less than this is a long press, not a drag. */
-const TAP_SLOP = 8;
 const SPRING = { damping: 22, mass: 0.6, stiffness: 240 };
 const SHIFT = { duration: 160 };
 
@@ -62,29 +70,28 @@ const hoverHaptic = () => {
 };
 
 /**
- * The sets of one folder as a sortable list: tap to open, long press to lift a
- * row onto a new place or into a folder, release without moving for its menu.
+ * The sets of one folder. Normally a tap opens a set and a long press opens
+ * the system context menu `renderMenu` fills. While `editing`, each row grows
+ * a handle that drags it onto a new place or into a folder pill.
  */
 export function SortableSets({
   sets,
   metrics,
   folderRects,
   setsOffsetY,
-  reorderable,
-  onOpen,
-  onMenu,
+  editing,
+  renderMenu,
   onReorder,
   onDropInFolder,
   onDragChange,
   onHoverFolder,
 }: {
   sets: LibrarySet[];
-  metrics: Map<string, { senseCount: number; questionCount: number }>;
+  metrics: Map<string, Metrics>;
   folderRects: SharedValue<FolderRect[]>;
   setsOffsetY: number;
-  reorderable: boolean;
-  onOpen(id: string): void;
-  onMenu(id: string): void;
+  editing: boolean;
+  renderMenu(entry: LibrarySet): ReactNode;
   onReorder(id: string, toIndex: number): void;
   onDropInFolder(id: string, folderId: string): void;
   onDragChange(dragging: boolean): void;
@@ -148,31 +155,83 @@ export function SortableSets({
 
   return (
     <View style={styles.sets}>
-      {sets.map((entry, index) => (
-        <SetRow
-          key={entry.id}
-          entry={entry}
-          index={index}
-          ids={ids}
-          metrics={metrics.get(entry.id) ?? NO_METRICS}
-          drag={drag}
-          folderRects={folderRects}
-          setsOffsetY={setsOffsetY}
-          reorderable={reorderable}
-          onOpen={onOpen}
-          onMenu={onMenu}
-          onReorder={onReorder}
-          onDropInFolder={onDropInFolder}
-          onDragChange={onDragChange}
-          onHoverFolder={onHoverFolder}
-        />
-      ))}
+      {sets.map((entry, index) =>
+        editing ? (
+          <EditableRow
+            key={entry.id}
+            entry={entry}
+            index={index}
+            ids={ids}
+            metrics={metrics.get(entry.id) ?? NO_METRICS}
+            drag={drag}
+            folderRects={folderRects}
+            setsOffsetY={setsOffsetY}
+            onReorder={onReorder}
+            onDropInFolder={onDropInFolder}
+            onDragChange={onDragChange}
+            onHoverFolder={onHoverFolder}
+          />
+        ) : (
+          <Link
+            key={entry.id}
+            href={{ pathname: "/library/[setId]", params: { setId: entry.id } }}
+            asChild
+          >
+            <Link.Trigger>
+              {/* Link's Slot flattens the trigger's style, so a style function
+                  would be lost: the card's look lives on the inner view. */}
+              <Pressable accessibilityRole="button" style={styles.trigger}>
+                {({ pressed }) => (
+                  <View style={[styles.set, pressed && styles.setPressed]}>
+                    <RowContent
+                      setName={entry.setName}
+                      metrics={metrics.get(entry.id) ?? NO_METRICS}
+                    />
+                  </View>
+                )}
+              </Pressable>
+            </Link.Trigger>
+            {renderMenu(entry)}
+          </Link>
+        ),
+      )}
     </View>
   );
 }
 
 /** A set, led by its name, with its size set large on the right. */
-function SetRow({
+function RowContent({
+  setName,
+  metrics,
+}: {
+  setName: string;
+  metrics: Metrics;
+}) {
+  return (
+    <>
+      <View style={styles.setText}>
+        <Text
+          style={[styles.setName, isLatin(setName) && styles.setNameLatin]}
+          numberOfLines={2}
+        >
+          {setName}
+        </Text>
+        <Text style={styles.setMeta}>
+          {metrics.questionCount
+            ? t("library.questionCount", { count: metrics.questionCount })
+            : "還沒有題目"}
+        </Text>
+      </View>
+      <View style={styles.setSize}>
+        <Text style={styles.setCount}>{metrics.senseCount}</Text>
+        <Text style={styles.setUnit}>詞義</Text>
+      </View>
+    </>
+  );
+}
+
+/** A row in edit mode: its handle lifts it at once, no long press needed. */
+function EditableRow({
   entry,
   index,
   ids,
@@ -180,9 +239,6 @@ function SetRow({
   drag,
   folderRects,
   setsOffsetY,
-  reorderable,
-  onOpen,
-  onMenu,
   onReorder,
   onDropInFolder,
   onDragChange,
@@ -191,42 +247,26 @@ function SetRow({
   entry: LibrarySet;
   index: number;
   ids: string[];
-  metrics: { senseCount: number; questionCount: number };
+  metrics: Metrics;
   drag: DragState;
   folderRects: SharedValue<FolderRect[]>;
   setsOffsetY: number;
-  reorderable: boolean;
-  onOpen(id: string): void;
-  onMenu(id: string): void;
   onReorder(id: string, toIndex: number): void;
   onDropInFolder(id: string, folderId: string): void;
   onDragChange(dragging: boolean): void;
   onHoverFolder(folderId: string | null): void;
 }) {
   const { id, setName } = entry;
-  const [pressed, setPressed] = useState(false);
+  // Where the handle sits in the row, to place the finger in listing space.
+  const [handle, setHandle] = useState({ x: 0, y: 0 });
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     drag.layouts.set({ ...drag.layouts.value, [id]: { y, height } });
   };
 
-  const tap = Gesture.Tap()
-    .onBegin(() => {
-      runOnJS(setPressed)(true);
-    })
-    .onEnd((_event, success) => {
-      if (success) runOnJS(onOpen)(id);
-    })
-    .onFinalize(() => {
-      runOnJS(setPressed)(false);
-    });
-
   const pan = Gesture.Pan()
-    .activateAfterLongPress(300)
-    .onBegin(() => {
-      runOnJS(setPressed)(true);
-    })
+    .minDistance(0)
     .onStart((event) => {
       const layout = drag.layouts.value[id];
       drag.draggingId.set(id);
@@ -236,8 +276,8 @@ function SetRow({
       drag.draggedHeight.set(layout?.height ?? 0);
       drag.translateX.set(0);
       drag.translateY.set(0);
-      drag.startX.set(event.x);
-      drag.startY.set(setsOffsetY + (layout?.y ?? 0) + event.y);
+      drag.startX.set(handle.x + event.x);
+      drag.startY.set(setsOffsetY + (layout?.y ?? 0) + handle.y + event.y);
       drag.active.set(true);
       runOnJS(onDragChange)(true);
       runOnJS(startHaptic)();
@@ -269,10 +309,6 @@ function SetRow({
       // Over a folder the drop is a move, so no row needs to make space.
       if (overFolder !== null) return;
 
-      if (!reorderable) {
-        drag.hoverIndex.set(drag.fromIndex.value);
-        return;
-      }
       const layout = drag.layouts.value[id];
       if (!layout) return;
       const from = drag.fromIndex.value;
@@ -291,15 +327,10 @@ function SetRow({
       drag.hoverIndex.set(target);
     })
     .onFinalize(() => {
-      runOnJS(setPressed)(false);
       if (!drag.active.value) return;
       drag.active.set(false);
       const draggedId = drag.draggingId.value;
       if (!draggedId) return;
-      const distance = Math.sqrt(
-        drag.translateX.value * drag.translateX.value +
-          drag.translateY.value * drag.translateY.value,
-      );
       const folder = drag.hoverFolder.value;
       const target = drag.hoverIndex.value;
       const from = drag.fromIndex.value;
@@ -317,13 +348,10 @@ function SetRow({
       runOnJS(onDragChange)(false);
       runOnJS(onHoverFolder)(null);
 
-      if (distance < TAP_SLOP) runOnJS(onMenu)(draggedId);
-      else if (folder !== null) runOnJS(onDropInFolder)(draggedId, folder);
+      if (folder !== null) runOnJS(onDropInFolder)(draggedId, folder);
       else if (target !== -1 && target !== from)
         runOnJS(onReorder)(draggedId, target);
     });
-
-  const gesture = Gesture.Exclusive(pan, tap);
 
   const animated = useAnimatedStyle(() => {
     const height = drag.draggedHeight.value;
@@ -344,7 +372,8 @@ function SetRow({
     const to = drag.hoverIndex.value;
     let offset = 0;
     if (drag.draggingId.value !== null && drag.hoverFolder.value === null) {
-      if (from < to && index > from && index <= to) offset = -(height + ROW_GAP);
+      if (from < to && index > from && index <= to)
+        offset = -(height + ROW_GAP);
       else if (from > to && to !== -1 && index >= to && index < from)
         offset = height + ROW_GAP;
     }
@@ -361,36 +390,32 @@ function SetRow({
   });
 
   return (
-    <GestureDetector gesture={gesture}>
-      <Animated.View
-        accessibilityRole="button"
-        onLayout={onLayout}
-        style={[styles.set, pressed && styles.setPressed, animated]}
-      >
-        <View style={styles.setText}>
-          <Text
-            style={[styles.setName, isLatin(setName) && styles.setNameLatin]}
-            numberOfLines={2}
-          >
-            {setName}
-          </Text>
-          <Text style={styles.setMeta}>
-            {metrics.questionCount
-              ? t("library.questionCount", { count: metrics.questionCount })
-              : "還沒有題目"}
-          </Text>
+    <Animated.View onLayout={onLayout} style={[styles.set, animated]}>
+      <RowContent setName={setName} metrics={metrics} />
+      <GestureDetector gesture={pan}>
+        <View
+          accessibilityLabel={`拖動「${setName}」`}
+          hitSlop={12}
+          onLayout={(event) => {
+            const { x, y } = event.nativeEvent.layout;
+            setHandle({ x, y });
+          }}
+          style={styles.handle}
+        >
+          <SymbolView
+            name="line.3.horizontal"
+            size={20}
+            tintColor={colors.muted}
+          />
         </View>
-        <View style={styles.setSize}>
-          <Text style={styles.setCount}>{metrics.senseCount}</Text>
-          <Text style={styles.setUnit}>詞義</Text>
-        </View>
-      </Animated.View>
-    </GestureDetector>
+      </GestureDetector>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   sets: { gap: ROW_GAP },
+  trigger: { borderRadius: radius.card, borderCurve: "continuous" },
   set: {
     flexDirection: "row",
     alignItems: "center",
@@ -430,4 +455,5 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   setUnit: { ...type.hint, color: colors.muted },
+  handle: { paddingVertical: 8, paddingLeft: 4 },
 });

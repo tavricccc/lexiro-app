@@ -1,13 +1,7 @@
-import { router, Stack } from "expo-router";
+import { Link, router, Stack } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SymbolView } from "expo-symbols";
-import {
-  ActionSheetIOS,
-  Alert,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -42,6 +36,7 @@ import { sortSets, planSetReorder } from "@/core/lib/set-order";
 import { copySharedSet } from "@/core/lib/set-share";
 import { createUniqueSetName } from "@/core/lib/set-name";
 import { useLibraryStore } from "@/core/stores/library-store";
+import type { LibrarySet } from "@/core/types";
 import { colors, latin, radius } from "@/lib/theme";
 import { pickSetShareFile } from "@/platform/set-share-files";
 import { toast } from "@/platform/toast";
@@ -167,6 +162,10 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
   }, [folderKey, publishFolderRects]);
 
   const [dragging, setDragging] = useState(false);
+  // Edit mode gives every set a drag handle; searching leaves it.
+  const [editRequested, setEditing] = useState(false);
+  const canEdit = !needle && sets.length > 0;
+  const editing = editRequested && canEdit;
   const [hoverFolder, setHoverFolder] = useState<string | null>(null);
   const [setsOffsetY, setSetsOffsetY] = useState(0);
 
@@ -211,66 +210,81 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
       currentName,
     );
   };
-  const pickFolderFor = (id: string, currentFolderId: string) => {
-    const options = setFolderOptions(state.folders);
-    const home =
-      !currentFolderId || currentFolderId === ALL_FOLDER_ID
-        ? UNCATEGORIZED_FOLDER_ID
-        : currentFolderId;
-    const current = options.findIndex((option) => option.value === home);
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: "移到資料夾",
-        options: [
-          ...options.map((option, index) =>
-            index === current ? `${option.label}（目前）` : option.label,
-          ),
-          t("common.cancel"),
-        ],
-        cancelButtonIndex: options.length,
-        disabledButtonIndices: current >= 0 ? [current] : undefined,
-      },
-      (index) => {
-        const option = options[index];
-        if (option) moveSetTo(id, option.value);
-      },
-    );
-  };
   const askDeleteSet = (id: string, name: string) =>
-    Alert.alert(
-      t("setDetail.delete"),
-      t("setDetail.deleteConfirm", { name }),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("setDetail.delete"),
-          style: "destructive",
-          onPress: () => void store().deleteSet(id),
-        },
-      ],
-    );
-  const openMenu = (id: string) => {
-    const entry = state.sets.find((set) => set.id === id);
-    if (!entry) return;
-    ActionSheetIOS.showActionSheetWithOptions(
+    Alert.alert(t("setDetail.delete"), t("setDetail.deleteConfirm", { name }), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        title: entry.setName,
-        options: ["開始練習", "重新命名", "移到資料夾…", "分享", "刪除", "取消"],
-        cancelButtonIndex: 5,
-        destructiveButtonIndex: 4,
+        text: t("setDetail.delete"),
+        style: "destructive",
+        onPress: () => void store().deleteSet(id),
       },
-      (index) => {
-        if (index === 0)
-          router.push({ pathname: "/practice", params: { setId: id } });
-        else if (index === 1) renameSet(id, entry.setName);
-        else if (index === 2) pickFolderFor(id, entry.folderId);
-        else if (index === 3)
-          router.push({
-            pathname: "/sets/[setId]/share",
-            params: { setId: id },
-          });
-        else if (index === 4) askDeleteSet(id, entry.setName);
-      },
+    ]);
+  // The system context menu a long press on a set opens.
+  const folderOptions = setFolderOptions(state.folders);
+  const renderMenu = (entry: LibrarySet) => {
+    const home =
+      !entry.folderId || entry.folderId === ALL_FOLDER_ID
+        ? UNCATEGORIZED_FOLDER_ID
+        : entry.folderId;
+    return (
+      <Link.Menu title={entry.setName}>
+        <Link.MenuAction
+          icon="play"
+          onPress={() =>
+            router.push({ pathname: "/practice", params: { setId: entry.id } })
+          }
+        >
+          開始練習
+        </Link.MenuAction>
+        <Link.Menu inline>
+          <Link.MenuAction
+            icon="pencil"
+            onPress={() => renameSet(entry.id, entry.setName)}
+          >
+            重新命名
+          </Link.MenuAction>
+          <Link.Menu title="移到資料夾" icon="folder">
+            {folderOptions.map((option) => (
+              <Link.MenuAction
+                key={option.value}
+                isOn={option.value === home}
+                onPress={() => {
+                  if (option.value !== home) moveSetTo(entry.id, option.value);
+                }}
+              >
+                {option.label}
+              </Link.MenuAction>
+            ))}
+          </Link.Menu>
+          <Link.MenuAction
+            icon="square.and.arrow.up"
+            onPress={() =>
+              router.push({
+                pathname: "/sets/[setId]/share",
+                params: { setId: entry.id },
+              })
+            }
+          >
+            分享
+          </Link.MenuAction>
+          <Link.MenuAction
+            icon="arrow.up.arrow.down"
+            hidden={!canEdit}
+            onPress={() => setEditing(true)}
+          >
+            重新排序
+          </Link.MenuAction>
+        </Link.Menu>
+        <Link.Menu inline>
+          <Link.MenuAction
+            icon="trash"
+            destructive
+            onPress={() => askDeleteSet(entry.id, entry.setName)}
+          >
+            刪除
+          </Link.MenuAction>
+        </Link.Menu>
+      </Link.Menu>
     );
   };
   const createSet = () =>
@@ -361,10 +375,7 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
     if (!currentFolder) return;
     if (parent === (currentFolder.parentId ?? ROOT_FOLDER)) return;
     void store()
-      .moveFolder(
-        currentFolder.id,
-        parent === ROOT_FOLDER ? undefined : parent,
-      )
+      .moveFolder(currentFolder.id, parent === ROOT_FOLDER ? undefined : parent)
       .catch(() => Alert.alert(t("library.folderNameConflict")));
   };
 
@@ -383,8 +394,24 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
         onChangeText={(event) => setQuery(event.nativeEvent.text)}
         onCancelButtonPress={() => setQuery("")}
       />
-      {missing ? null : (
+      {missing ? null : editing ? (
         <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button
+            variant="done"
+            onPress={() => setEditing(false)}
+          >
+            完成
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : (
+        <Stack.Toolbar placement="right">
+          {canEdit ? (
+            <Stack.Toolbar.Button
+              icon="arrow.up.arrow.down"
+              accessibilityLabel="重新排序"
+              onPress={() => setEditing(true)}
+            />
+          ) : null}
           <Stack.Toolbar.Menu
             icon="plus"
             accessibilityLabel={t("library.newSet")}
@@ -429,17 +456,13 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
               >
                 {t("library.renameFolder")}
               </Stack.Toolbar.MenuAction>
-              <Stack.Toolbar.Menu
-                icon="folder"
-                title={t("library.moveFolder")}
-              >
+              <Stack.Toolbar.Menu icon="folder" title={t("library.moveFolder")}>
                 {folderParentOptions(state.folders, currentFolder.id).map(
                   (option) => (
                     <Stack.Toolbar.MenuAction
                       key={option.value}
                       isOn={
-                        option.value ===
-                        (currentFolder.parentId ?? ROOT_FOLDER)
+                        option.value === (currentFolder.parentId ?? ROOT_FOLDER)
                       }
                       onPress={() => moveFolderTo(option.value)}
                     >
@@ -459,10 +482,7 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
           ) : null}
         </Stack.Toolbar>
       )}
-      <Screen
-        refreshControl={<SyncRefreshControl />}
-        scrollEnabled={!dragging}
-      >
+      <Screen refreshControl={<SyncRefreshControl />} scrollEnabled={!dragging}>
         {status === "error" ? (
           <EmptyState
             illustrated={false}
@@ -476,7 +496,11 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             body={t("setDetail.missingDescription")}
           />
         ) : status !== "ready" ? null : !listEmpty ? (
-          <Animated.View entering={swapIn} layout={glide} style={styles.listing}>
+          <Animated.View
+            entering={swapIn}
+            layout={glide}
+            style={styles.listing}
+          >
             {!needle && childFolders.length ? (
               <View
                 style={styles.folders}
@@ -509,23 +533,15 @@ export function LibraryListing({ folderId }: { folderId?: string }) {
             ) : null}
             {sets.length ? (
               <View
-                onLayout={(event) =>
-                  setSetsOffsetY(event.nativeEvent.layout.y)
-                }
+                onLayout={(event) => setSetsOffsetY(event.nativeEvent.layout.y)}
               >
                 <SortableSets
                   sets={sets}
                   metrics={metrics}
                   folderRects={folderRects}
                   setsOffsetY={setsOffsetY}
-                  reorderable={!needle}
-                  onOpen={(id) =>
-                    router.push({
-                      pathname: "/library/[setId]",
-                      params: { setId: id },
-                    })
-                  }
-                  onMenu={openMenu}
+                  editing={editing}
+                  renderMenu={renderMenu}
                   onReorder={reorder}
                   onDropInFolder={moveSetTo}
                   onDragChange={setDragging}
@@ -630,6 +646,11 @@ const styles = StyleSheet.create({
     paddingRight: 18,
     borderRadius: radius.bubble,
   },
-  folderName: { fontSize: 16, fontWeight: "600", color: colors.foreground, flexShrink: 1 },
+  folderName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.foreground,
+    flexShrink: 1,
+  },
   folderCount: { ...latin.bold, fontSize: 16, color: colors.muted },
 });
