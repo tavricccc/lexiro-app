@@ -258,16 +258,23 @@ function normalizeSet(
   const source = requiredObject(value, `sets[${index}]`);
   assertKnownKeys(
     source,
-    ["id", "setName", "folderId", "createdAt", "updatedAt"],
+    ["id", "setName", "folderId", "order", "createdAt", "updatedAt"],
     `sets[${index}]`,
   );
   const folderId = requiredText(source.folderId, `sets[${index}].folderId`);
   if (!folderIds.has(folderId))
     throw new Error(`sets[${index}] 指向未知 folderId`);
+  const order = source.order;
+  if (
+    order !== undefined &&
+    (typeof order !== "number" || !Number.isFinite(order))
+  )
+    throw new Error(`sets[${index}].order 格式錯誤`);
   return {
     id: requiredText(source.id, `sets[${index}].id`),
     setName: requiredText(source.setName, `sets[${index}].setName`),
     folderId,
+    ...(order === undefined ? {} : { order }),
     createdAt: requiredText(source.createdAt, `sets[${index}].createdAt`),
     updatedAt: requiredText(source.updatedAt, `sets[${index}].updatedAt`),
   };

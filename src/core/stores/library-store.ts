@@ -70,6 +70,8 @@ interface LibraryStore {
   moveFolder: (id: string, parentId?: string) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
   moveSet: (id: string, folderId: string) => Promise<void>;
+  reorderSets: (updates: { id: string; order: number }[]) => Promise<void>;
+  renameSet: (id: string, setName: string) => Promise<void>;
   saveSet: (input: {
     id?: string;
     setName: string;
@@ -321,10 +323,60 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     if (!current || current.folderId === folderId) return;
     if (!destinationExists) throw new Error("folder-not-found");
     const timestamp = now();
+    // The destination folder has its own order; this set has not been placed
+    // there by hand yet.
+    const { order: _order, ...moved } = current;
     const state = {
       ...get().state,
       sets: get().state.sets.map((entry) =>
-        entry.id === id ? { ...entry, folderId, updatedAt: timestamp } : entry,
+        entry.id === id ? { ...moved, folderId, updatedAt: timestamp } : entry,
+      ),
+      updatedAt: timestamp,
+    };
+    await commit(state);
+    set({ state });
+  }),
+
+  reorderSets: serial(async (updates) => {
+    if (!updates.length) return;
+    const timestamp = now();
+    const orderById = new Map(updates.map((entry) => [entry.id, entry.order]));
+    const state = {
+      ...get().state,
+      sets: get().state.sets.map((entry) => {
+        const order = orderById.get(entry.id);
+        return order === undefined
+          ? entry
+          : { ...entry, order, updatedAt: timestamp };
+      }),
+      updatedAt: timestamp,
+    };
+    await commit(state);
+    set({ state });
+  }),
+
+  renameSet: serial(async (id, setName) => {
+    const name = setName.trim();
+    if (!name) throw new Error("set-name-empty");
+    const current = get().state.sets.find((entry) => entry.id === id);
+    if (!current) return;
+    const normalizedName = name.toLocaleLowerCase();
+    if (
+      get().state.sets.some(
+        (entry) =>
+          entry.id !== id &&
+          entry.setName.trim().toLocaleLowerCase() === normalizedName,
+      )
+    )
+      throw new Error("set-name-conflict");
+    if (current.setName.trim() === name) return;
+    const timestamp = now();
+    const state = {
+      ...get().state,
+      sets: get().state.sets.map((entry) =>
+        entry.id === id
+          ? { ...entry, setName: name, updatedAt: timestamp }
+          : entry,
       ),
       updatedAt: timestamp,
     };
@@ -341,6 +393,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
         id: setId,
         setName: setName.trim(),
         folderId: folderId || UNCATEGORIZED_FOLDER_ID,
+        ...(previous?.order === undefined ? {} : { order: previous.order }),
         createdAt: previous?.createdAt ?? timestamp,
         updatedAt: timestamp,
       };

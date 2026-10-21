@@ -78,6 +78,11 @@ export interface LibrarySet {
   id: string
   setName: string
   folderId: string
+  /**
+   * Where the person placed this set among the others in its folder, lowest
+   * first. Absent until that folder is first reordered by hand.
+   */
+  order?: number
   createdAt: string
   updatedAt: string
 }
