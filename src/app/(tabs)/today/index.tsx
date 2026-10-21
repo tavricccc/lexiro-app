@@ -47,17 +47,6 @@ export default function TodayScreen() {
       [...library.sets].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
     );
   }, [lastPracticedId, library.sets]);
-  const totals = useMemo(
-    () => ({
-      sets: library.sets.length,
-      senses: library.sets.reduce(
-        (sum, set) => sum + senseCount(library, set.id),
-        0,
-      ),
-      questions: library.questions.length,
-    }),
-    [library],
-  );
 
   return (
     <Screen refreshControl={<SyncRefreshControl />}>
@@ -106,11 +95,6 @@ export default function TodayScreen() {
                 />
               </View>
             </View>
-            <Animated.View entering={enterUp.delay(80)} style={styles.totals}>
-              <Total value={totals.sets} label="單字集" />
-              <Total value={totals.senses} label="詞義" />
-              <Total value={totals.questions} label="題目" />
-            </Animated.View>
           </>
         ) : (
           <>
@@ -142,17 +126,6 @@ export default function TodayScreen() {
         )}
       </View>
     </Screen>
-  );
-}
-
-function Total({ value, label }: { value: number; label: string }) {
-  return (
-    <View style={styles.total}>
-      <Text style={styles.totalValue} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      <Text style={styles.totalLabel}>{label}</Text>
-    </View>
   );
 }
 
@@ -206,18 +179,6 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 10, marginTop: 14 },
   secondaryAction: { flex: 1 },
   primaryAction: { flex: 1.4 },
-  // Three counts at a large size on the canvas: no band, no tiles.
-  totals: { flexDirection: "row", gap: 16, paddingHorizontal: 4 },
-  total: { flex: 1 },
-  totalValue: {
-    ...latin.heavy,
-    fontSize: 44,
-    lineHeight: 48,
-    letterSpacing: -1.5,
-    color: colors.foreground,
-    fontVariant: ["tabular-nums"],
-  },
-  totalLabel: { ...type.body, color: colors.muted },
   steps: { gap: 22, paddingHorizontal: 4 },
   step: { flexDirection: "row", gap: 14 },
   stepText: { flex: 1, gap: 3 },
