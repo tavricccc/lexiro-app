@@ -56,14 +56,12 @@ export default function RoomsScreen() {
               accessibilityLabel={t("rooms.codeLabel")}
               value={normalized}
               onChangeText={setCode}
-              placeholder={t("rooms.codeLabel")}
-              placeholderTextColor="rgba(11,15,20,0.4)"
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={6}
               returnKeyType="go"
               onSubmitEditing={() => valid && openRoom(normalized)}
-              style={[styles.code, !normalized && styles.codeEmpty]}
+              style={styles.code}
             />
             <Button
               label={t("rooms.join")}
@@ -125,13 +123,5 @@ const styles = StyleSheet.create({
     fontSize: 36,
     letterSpacing: 8,
     color: colors.fieldInk,
-  },
-  // The placeholder takes the field's style; the code's wide Latin setting
-  // spreads Chinese out, so the empty field uses plain text instead.
-  codeEmpty: {
-    fontFamily: undefined,
-    fontSize: 20,
-    fontWeight: "600",
-    letterSpacing: 0,
   },
 });
