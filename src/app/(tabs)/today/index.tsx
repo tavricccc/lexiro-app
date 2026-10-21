@@ -67,7 +67,9 @@ export default function TodayScreen() {
                   styles.posterTitle,
                   isLatin(latest.setName) && styles.posterTitleLatin,
                 ]}
-                numberOfLines={2}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.4}
               >
                 {latest.setName}
               </Text>
