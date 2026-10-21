@@ -63,7 +63,7 @@ export default function RoomsScreen() {
               maxLength={6}
               returnKeyType="go"
               onSubmitEditing={() => valid && openRoom(normalized)}
-              style={styles.code}
+              style={[styles.code, !normalized && styles.codeEmpty]}
             />
             <Button
               label={t("rooms.join")}
@@ -125,5 +125,13 @@ const styles = StyleSheet.create({
     fontSize: 36,
     letterSpacing: 8,
     color: colors.fieldInk,
+  },
+  // The placeholder takes the field's style; the code's wide Latin setting
+  // spreads Chinese out, so the empty field uses plain text instead.
+  codeEmpty: {
+    fontFamily: undefined,
+    fontSize: 20,
+    fontWeight: "600",
+    letterSpacing: 0,
   },
 });
