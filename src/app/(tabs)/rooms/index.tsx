@@ -56,7 +56,7 @@ export default function RoomsScreen() {
               accessibilityLabel={t("rooms.codeLabel")}
               value={normalized}
               onChangeText={setCode}
-              placeholder={t("rooms.codePlaceholder")}
+              placeholder={t("rooms.codeLabel")}
               placeholderTextColor="rgba(11,15,20,0.4)"
               autoCapitalize="characters"
               autoCorrect={false}
