@@ -112,6 +112,13 @@ export function QuestionView({
             <View style={styles.promptRow}>
               <Text
                 selectable
+                {...(wordTask && !item.blank && isSingleTerm(item.prompt)
+                  ? {
+                      numberOfLines: 1,
+                      adjustsFontSizeToFit: true,
+                      minimumFontScale: isLatin(item.prompt) ? 0.5 : 0.6,
+                    }
+                  : {})}
                 style={
                   wordTask
                     ? [
@@ -288,6 +295,15 @@ function Feedback({
       </Card>
     </Animated.View>
   );
+}
+
+/**
+ * A prompt with no spaces or list punctuation is one word: shrinking it to fit
+ * keeps it from breaking mid-word, while a phrase may wrap between its words.
+ * The minimum scale keeps the shrunk word large enough to read.
+ */
+function isSingleTerm(prompt: string) {
+  return !/[\s,，、；;／/]/.test(prompt.trim());
 }
 
 const styles = StyleSheet.create({
