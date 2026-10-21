@@ -50,12 +50,14 @@ export default function RoomsScreen() {
       <Animated.View layout={glide}>
         <View style={styles.poster}>
           <View style={styles.posterBubble} />
-          <Text style={styles.posterTitle}>{t("rooms.joinHeader")}</Text>
+          <Text style={styles.posterHint}>{t("rooms.joinHeader")}</Text>
           <View style={styles.join}>
             <TextInput
               accessibilityLabel={t("rooms.codeLabel")}
               value={normalized}
               onChangeText={setCode}
+              placeholder="___ ___"
+              placeholderTextColor="rgba(11,15,20,0.3)"
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={6}
@@ -95,6 +97,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     gap: 14,
     padding: 22,
+    paddingTop: 20,
     borderRadius: radius.stage,
     borderCurve: "continuous",
     backgroundColor: colors.field,
@@ -108,11 +111,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.fieldInk,
   },
-  posterTitle: { ...type.display, color: colors.fieldInk, marginTop: 40 },
+  // A small label at the top, as on 今天's card.
+  posterHint: { ...type.section, color: colors.fieldInk },
   card: { gap: 12 },
   section: { ...type.section, color: colors.foreground },
   hint: { ...type.hint, color: colors.muted },
-  join: { gap: 10 },
+  // Clears the bubble cropped into the corner.
+  join: { gap: 10, marginTop: 28 },
   // The code is written into one long bubble.
   code: {
     ...latin.heavy,
