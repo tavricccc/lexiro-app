@@ -56,8 +56,6 @@ export default function RoomsScreen() {
               accessibilityLabel={t("rooms.codeLabel")}
               value={normalized}
               onChangeText={setCode}
-              placeholder="___ ___"
-              placeholderTextColor="rgba(11,15,20,0.3)"
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={6}
@@ -111,8 +109,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.fieldInk,
   },
-  // A small label at the top, as on 今天's card.
-  posterHint: { ...type.section, color: colors.fieldInk },
+  // A label at the top, as on 今天's card, set a size up.
+  posterHint: { ...type.title, color: colors.fieldInk },
   card: { gap: 12 },
   section: { ...type.section, color: colors.foreground },
   hint: { ...type.hint, color: colors.muted },
