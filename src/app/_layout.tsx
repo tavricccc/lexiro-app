@@ -7,6 +7,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { StyleSheet, useColorScheme, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeOut } from "react-native-reanimated";
 
 import { Button } from "@/components/ui/button";
@@ -61,62 +62,67 @@ export default function RootLayout() {
   };
 
   return (
-    <ThemeProvider value={theme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="practice"
-          options={{
-            headerShown: true,
-            title: "練習",
-            headerBackButtonDisplayMode: "minimal",
-            headerShadowVisible: false,
-            headerTintColor: dark ? plain.foreground.dark : plain.foreground.light,
-            headerStyle: { backgroundColor: canvas },
-          }}
-        />
-        <Stack.Screen name="sets" options={{ presentation: "modal" }} />
-        <Stack.Screen
-          name="session"
-          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
-        />
-      </Stack>
-      {askSignIn ? (
-        <Animated.View
-          exiting={FadeOut.duration(240)}
-          style={StyleSheet.absoluteFill}
-        >
-          <SignInPrompt
-            onSkip={() => {
-              localStorage.setItem(LOCAL_ONLY_KEY, "1");
-              setLocalOnly(true);
+    <GestureHandlerRootView style={styles.root}>
+      <ThemeProvider value={theme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="practice"
+            options={{
+              headerShown: true,
+              title: "練習",
+              headerBackButtonDisplayMode: "minimal",
+              headerShadowVisible: false,
+              headerTintColor: dark
+                ? plain.foreground.dark
+                : plain.foreground.light,
+              headerStyle: { backgroundColor: canvas },
             }}
           />
-        </Animated.View>
-      ) : null}
-      {failed ? (
-        <View style={[StyleSheet.absoluteFill, styles.failed]}>
-          <EmptyState
-            illustrated={false}
-            title="無法載入資料"
-            body={error}
-            action={
-              <Button
-                label="重新載入"
-                icon="arrow.clockwise"
-                onPress={() => void reloadAppAsync()}
-              />
-            }
+          <Stack.Screen name="sets" options={{ presentation: "modal" }} />
+          <Stack.Screen
+            name="session"
+            options={{ presentation: "fullScreenModal", gestureEnabled: false }}
           />
-        </View>
-      ) : null}
-      <ToastHost />
-    </ThemeProvider>
+        </Stack>
+        {askSignIn ? (
+          <Animated.View
+            exiting={FadeOut.duration(240)}
+            style={StyleSheet.absoluteFill}
+          >
+            <SignInPrompt
+              onSkip={() => {
+                localStorage.setItem(LOCAL_ONLY_KEY, "1");
+                setLocalOnly(true);
+              }}
+            />
+          </Animated.View>
+        ) : null}
+        {failed ? (
+          <View style={[StyleSheet.absoluteFill, styles.failed]}>
+            <EmptyState
+              illustrated={false}
+              title="無法載入資料"
+              body={error}
+              action={
+                <Button
+                  label="重新載入"
+                  icon="arrow.clockwise"
+                  onPress={() => void reloadAppAsync()}
+                />
+              }
+            />
+          </View>
+        ) : null}
+        <ToastHost />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   failed: {
     justifyContent: "center",
     padding: 16,
