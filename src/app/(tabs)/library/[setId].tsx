@@ -1,4 +1,4 @@
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Link, Stack, router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
@@ -301,54 +301,78 @@ export default function SetScreen() {
                 }
               >
                 {visibleWords.slice(0, limit).map((entry) => (
-                  <Pressable
+                  <Link
                     key={entry.wordKey}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("setDetail.editWord")}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/sets/[setId]/words/[wordKey]",
-                        params: { setId, wordKey: entry.wordKey },
-                      })
-                    }
-                    style={({ pressed }) => [
-                      styles.word,
-                      pressed && styles.pressed,
-                    ]}
+                    href={{
+                      pathname: "/sets/[setId]/words/[wordKey]",
+                      params: { setId, wordKey: entry.wordKey },
+                    }}
+                    asChild
                   >
-                    <View style={styles.wordBody}>
-                      <Text style={styles.spelling}>{entry.word}</Text>
-                      {entry.senses.map((sense) => (
-                        <View key={sense.id} style={styles.sense}>
-                          <Text style={styles.meaning}>
-                            {sense.pos ? (
-                              <Text style={styles.pos}>{sense.pos} </Text>
-                            ) : null}
-                            {sense.meaningZh}
-                          </Text>
-                          {sense.examples[0] ? (
-                            <Text style={styles.example} numberOfLines={2}>
-                              {sense.examples[0]}
-                            </Text>
-                          ) : null}
+                    <Link.Trigger>
+                      {/* Link's Slot flattens the trigger's style, so the
+                          pressed look lives on the inner view. */}
+                      <Pressable accessibilityRole="button">
+                        {({ pressed }) => (
+                          <View
+                            style={[styles.word, pressed && styles.pressed]}
+                          >
+                        <View style={styles.wordBody}>
+                          <Text style={styles.spelling}>{entry.word}</Text>
+                          {entry.senses.map((sense) => (
+                            <View key={sense.id} style={styles.sense}>
+                              <Text style={styles.meaning}>
+                                {sense.pos ? (
+                                  <Text style={styles.pos}>{sense.pos} </Text>
+                                ) : null}
+                                {sense.meaningZh}
+                              </Text>
+                              {sense.examples[0] ? (
+                                <Text style={styles.example} numberOfLines={2}>
+                                  {sense.examples[0]}
+                                </Text>
+                              ) : null}
+                            </View>
+                          ))}
                         </View>
-                      ))}
-                    </View>
-                    <PressableScale
-                      scaleTo={0.85}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("setDetail.speak")}
-                      hitSlop={10}
-                      onPress={() => speak(entry.word)}
-                      style={styles.speak}
-                    >
-                      <SymbolView
-                        name="speaker.wave.2.fill"
-                        size={17}
-                        tintColor={colors.fieldInk}
-                      />
-                    </PressableScale>
-                  </Pressable>
+                        <PressableScale
+                          scaleTo={0.85}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("setDetail.speak")}
+                          hitSlop={10}
+                          onPress={() => speak(entry.word)}
+                          style={styles.speak}
+                        >
+                          <SymbolView
+                            name="speaker.wave.2.fill"
+                            size={17}
+                            tintColor={colors.fieldInk}
+                          />
+                        </PressableScale>
+                          </View>
+                        )}
+                      </Pressable>
+                    </Link.Trigger>
+                    <Link.Menu title={entry.word}>
+                      <Link.MenuAction
+                        icon="pencil"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/sets/[setId]/words/[wordKey]/edit",
+                            params: { setId, wordKey: entry.wordKey },
+                          })
+                        }
+                      >
+                        {t("setDetail.editWord")}
+                      </Link.MenuAction>
+                      <Link.MenuAction
+                        icon="speaker.wave.2"
+                        onPress={() => speak(entry.word)}
+                      >
+                        {t("setDetail.speak")}
+                      </Link.MenuAction>
+                    </Link.Menu>
+                  </Link>
                 ))}
               </ListGroup>
             ) : needle ? (
@@ -387,54 +411,80 @@ export default function SetScreen() {
                   }
                 >
                   {visibleQuestions.slice(0, limit).map((question) => (
-                    <Pressable
+                    <Link
                       key={question.id}
-                      accessibilityRole="button"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/sets/[setId]/questions/[questionId]",
-                          params: { setId, questionId: question.id },
-                        })
-                      }
-                      onLongPress={() => confirmDeleteQuestion(question.id)}
-                      style={({ pressed }) => [
-                        styles.word,
-                        pressed && styles.pressed,
-                      ]}
+                      href={{
+                        pathname: "/sets/[setId]/questions/[questionId]",
+                        params: { setId, questionId: question.id },
+                      }}
+                      asChild
                     >
-                      <View style={styles.wordBody}>
-                        <Text style={styles.questionMeta}>
-                          <Text style={styles.format}>
-                            {questionFormatLabel(questionFormat(question))}
-                          </Text>
-                          {[
-                            "",
-                            difficultyLabel(question.difficulty),
-                            ...(question.kind === "reading"
-                              ? [
-                                  t("library.questionCount", {
-                                    count: question.questions.length,
-                                  }),
-                                ]
-                              : []),
-                          ].join(" · ")}
-                        </Text>
-                        <Text style={styles.questionTitle} numberOfLines={3}>
-                          {questionText(question)}
-                        </Text>
-                        {question.kind === "reading" && question.title ? (
-                          <Text style={styles.example} numberOfLines={2}>
-                            {question.passage}
-                          </Text>
-                        ) : null}
-                      </View>
-                      <SymbolView
-                        name="chevron.right"
-                        size={13}
-                        weight="semibold"
-                        tintColor={colors.faint}
-                      />
-                    </Pressable>
+                      <Link.Trigger>
+                        <Pressable accessibilityRole="button">
+                          {({ pressed }) => (
+                            <View
+                              style={[styles.word, pressed && styles.pressed]}
+                            >
+                          <View style={styles.wordBody}>
+                            <Text style={styles.questionMeta}>
+                              <Text style={styles.format}>
+                                {questionFormatLabel(questionFormat(question))}
+                              </Text>
+                              {[
+                                "",
+                                difficultyLabel(question.difficulty),
+                                ...(question.kind === "reading"
+                                  ? [
+                                      t("library.questionCount", {
+                                        count: question.questions.length,
+                                      }),
+                                    ]
+                                  : []),
+                              ].join(" · ")}
+                            </Text>
+                            <Text style={styles.questionTitle} numberOfLines={3}>
+                              {questionText(question)}
+                            </Text>
+                            {question.kind === "reading" && question.title ? (
+                              <Text style={styles.example} numberOfLines={2}>
+                                {question.passage}
+                              </Text>
+                            ) : null}
+                          </View>
+                          <SymbolView
+                            name="chevron.right"
+                            size={13}
+                            weight="semibold"
+                            tintColor={colors.faint}
+                          />
+                            </View>
+                          )}
+                        </Pressable>
+                      </Link.Trigger>
+                      <Link.Menu>
+                        <Link.MenuAction
+                          icon="pencil"
+                          onPress={() =>
+                            router.push({
+                              pathname:
+                                "/sets/[setId]/questions/[questionId]/edit",
+                              params: { setId, questionId: question.id },
+                            })
+                          }
+                        >
+                          編輯題目
+                        </Link.MenuAction>
+                        <Link.Menu inline>
+                          <Link.MenuAction
+                            icon="trash"
+                            destructive
+                            onPress={() => confirmDeleteQuestion(question.id)}
+                          >
+                            刪除題目
+                          </Link.MenuAction>
+                        </Link.Menu>
+                      </Link.Menu>
+                    </Link>
                   ))}
                 </ListGroup>
                 {!needle ? (
