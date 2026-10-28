@@ -33,6 +33,7 @@ import { configureFirebaseAuth } from "@/core/lib/firebase";
 import { isFirebaseConfigured } from "@/core/lib/firebase-config";
 import {
   getStorageNamespace,
+  removeNamespaceData,
   removeRetiredLearningData,
   setStorageNamespace,
 } from "@/core/lib/persist";
@@ -75,6 +76,8 @@ interface CloudStore {
   initialize: () => Promise<void>;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Erases the account in the cloud, in Firebase and on this device. */
+  deleteAccount: () => Promise<void>;
   /**
    * `reconcileAccount` also reads the account's open practice session. Pressing
    * 同步 means "make sure I have everything", so it asks for it; a background
@@ -338,6 +341,37 @@ export const useCloudStore = create<CloudStore>((set, get) => ({
       pending: 0,
       error: "",
     });
+  },
+
+  deleteAccount: async () => {
+    const runtime = await import("firebase/auth");
+    const auth = await configureFirebaseAuth();
+    const uid = auth?.currentUser?.uid;
+    if (!auth || !uid) return;
+    // The Worker and Firebase both ask for a sign-in from the last few
+    // minutes, so this signs in again and takes a token that carries it.
+    await (await import("@/platform/sign-in")).signInWithGoogle(auth);
+    // Signing in again may pick another Google account; never delete that one.
+    const current = auth.currentUser;
+    if (!current || current.uid !== uid)
+      throw new Error("請用要刪除的那個帳號重新登入。");
+    await current.getIdToken(true);
+    const { agentJson } = await import("@/core/lib/agent-client");
+    await agentJson("/account", { method: "DELETE" });
+    clearDebounce();
+    unwatch?.();
+    unwatch = null;
+    await runtime.deleteUser(current);
+    // The workspace leaves the namespace before its data goes, as on sign-out.
+    await enterNamespace(accountNamespace("guest"));
+    set({
+      user: null,
+      ready: true,
+      status: "signed-out",
+      pending: 0,
+      error: "",
+    });
+    await removeNamespaceData(accountNamespace(uid));
   },
 
   sync: async (options) => {

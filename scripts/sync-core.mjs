@@ -84,6 +84,11 @@ const PATCHES = {
       "await runtime.signInWithPopup(auth, new runtime.GoogleAuthProvider());",
       'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
     ],
+    // Signing in again stands in for reauthentication; the store checks the uid.
+    [
+      "await runtime.reauthenticateWithPopup(\n      auth.currentUser!,\n      new runtime.GoogleAuthProvider(),\n    );",
+      'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
+    ],
   ],
   // React Native's URL has no protocol setter or searchParams.set.
   "lib/room-client.ts": [

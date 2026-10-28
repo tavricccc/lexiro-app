@@ -1,5 +1,5 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-import { del, get, set } from "@/platform/kv";
+import { del, delMany, get, keys, set } from "@/platform/kv";
 import { NAMESPACE_SCOPED_KEYS } from "@/core/constants";
 
 export interface StorageLoadResult {
@@ -14,6 +14,15 @@ const scopedKeys = new Set(NAMESPACE_SCOPED_KEYS);
 export function setStorageNamespace(namespace: string): void {
   const normalized = namespace.trim();
   storageNamespace = normalized || "d1-v1:guest";
+}
+
+/** Removes every value stored under one account namespace, its library included. */
+export async function removeNamespaceData(namespace: string): Promise<void> {
+  const owned = (await keys()).filter(
+    (key): key is string =>
+      typeof key === "string" && key.startsWith(`${namespace}:`),
+  );
+  if (owned.length) await delMany(owned);
 }
 
 export function getStorageNamespace(): string {

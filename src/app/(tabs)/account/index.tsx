@@ -18,6 +18,8 @@ export default function AccountScreen() {
   const library = useLibraryStore((store) => store.state);
   const sync = useCloudStore((state) => state.sync);
   const signOut = useCloudStore((state) => state.signOut);
+  const deleteAccount = useCloudStore((state) => state.deleteAccount);
+  const [deleting, setDeleting] = useState(false);
   const { busy, signIn } = useSignIn();
 
   const name = user?.displayName || user?.email || "本機使用者";
@@ -29,6 +31,36 @@ export default function AccountScreen() {
       { text: "取消", style: "cancel" },
       { text: "登出", style: "destructive", onPress: () => void signOut() },
     ]);
+
+  const removeAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      Alert.alert("帳號已刪除", "雲端與這台裝置上的資料都已清除。");
+    } catch (reason) {
+      Alert.alert("沒有刪除帳號", reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setDeleting(false);
+    }
+  };
+  // Deleting asks twice and then a fresh Google sign-in: nothing undoes it.
+  const confirmDelete = () =>
+    Alert.alert(
+      "刪除帳號？",
+      "雲端上的單字集、題目、練習紀錄、分享連結和 AI 連線會全部刪除，這台裝置上這個帳號的資料也會清掉，無法復原。",
+      [
+        { text: "取消", style: "cancel" },
+        {
+          text: "繼續",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("最後確認", "接下來會請你重新登入 Google，登入後立即刪除。", [
+              { text: "取消", style: "cancel" },
+              { text: "刪除帳號", style: "destructive", onPress: () => void removeAccount() },
+            ]),
+        },
+      ],
+    );
 
   return (
     <Screen>
@@ -82,6 +114,15 @@ export default function AccountScreen() {
               icon="rectangle.portrait.and.arrow.right"
               destructive
               onPress={confirmSignOut}
+            />
+          </ListGroup>
+          <ListGroup footer="刪除雲端與這台裝置上這個帳號的所有資料。">
+            <ListRow
+              title={deleting ? "刪除中…" : "刪除帳號"}
+              icon="trash"
+              destructive
+              accessory={deleting ? <ActivityIndicator /> : undefined}
+              onPress={deleting ? undefined : confirmDelete}
             />
           </ListGroup>
         </>

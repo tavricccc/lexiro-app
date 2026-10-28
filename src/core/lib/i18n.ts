@@ -502,6 +502,11 @@ export const zhTW = {
     signedOut: "已登出，現在使用本機空間",
     syncComplete: "同步完成",
     actionFailed: "操作失敗：{message}",
+    deleteAccount: "刪除帳號",
+    deleteAccountDescription: "刪除雲端與這台裝置上這個帳號的所有資料。",
+    deleteAccountWarning:
+      "雲端上的單字集、題目、練習紀錄、分享連結和 AI 連線會全部刪除，這台裝置上這個帳號的資料也會清掉，無法復原。按下刪除後會請你重新登入 Google。",
+    accountDeleted: "帳號已刪除",
   },
   setEditor: {
     unsavedTitle: "尚未儲存變更",
