@@ -77,9 +77,14 @@ export default function WordDetailScreen() {
             {sense.meaningZh}
           </Text>
           {sense.description ? (
-            <Text style={styles.description} selectable>
-              {sense.description}
-            </Text>
+            <View style={styles.description}>
+              <Text style={styles.descriptionLabel}>
+                {t("setEditor.description")}
+              </Text>
+              <Text style={styles.descriptionText} selectable>
+                {sense.description}
+              </Text>
+            </View>
           ) : null}
           {sense.examples
             .filter((example) => example.trim())
@@ -125,6 +130,15 @@ const styles = StyleSheet.create({
   meaning: { ...type.section, color: colors.foreground },
   pos: { ...latin.semibold, color: colors.brand },
   example: { ...type.body, color: colors.muted },
-  description: { ...type.body, color: colors.foreground },
+  // A tinted note so a usage remark never reads as one more example.
+  description: {
+    backgroundColor: colors.brandSoft,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  descriptionLabel: { ...type.hint, color: colors.fieldDeep, fontWeight: "600" },
+  descriptionText: { ...type.body, color: colors.foreground },
   hint: { ...type.hint, color: colors.muted },
 });
