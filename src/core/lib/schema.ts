@@ -10,11 +10,31 @@ export function hasOnlyKeys(
   return Object.keys(value).every((key) => allowed.includes(key));
 }
 
+let lenientReads = 0;
+
+/**
+ * Runs a read of stored data that tolerates fields this version does not
+ * know. Data written by a newer version then loses only what it added,
+ * instead of failing the whole read: one unknown field on one word would
+ * otherwise stop a sync or a shared set from loading at all. Input that is
+ * authored now, an Agent write or an imported file, stays strict so a
+ * misspelled field is reported rather than dropped.
+ */
+export function ignoringUnknownKeys<T>(read: () => T): T {
+  lenientReads += 1;
+  try {
+    return read();
+  } finally {
+    lenientReads -= 1;
+  }
+}
+
 export function assertKnownKeys(
   value: Record<string, unknown>,
   allowed: readonly string[],
   field: string,
 ): void {
+  if (lenientReads) return;
   const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
   if (unknown.length)
     throw new Error(`${field} 包含不支援欄位：${unknown.join("、")}`);

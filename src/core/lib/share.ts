@@ -28,6 +28,7 @@ import {
 } from "./question-ownership";
 import {
   assertKnownKeys,
+  ignoringUnknownKeys,
   requiredNumber,
   requiredObject,
   requiredText,
@@ -205,7 +206,12 @@ export function normalizeSharedSet(value: unknown, legacy = false): SharedSet {
   return normalized;
 }
 
+/** A shared set may come from an owner on a newer version. */
 export function normalizeSharePayload(value: unknown): SetSharePayload {
+  return ignoringUnknownKeys(() => readSharePayload(value));
+}
+
+function readSharePayload(value: unknown): SetSharePayload {
   const source = requiredObject(value, "匯入資料");
   assertKnownKeys(
     source,
@@ -280,9 +286,14 @@ function normalizeSet(
   };
 }
 
+/** Stored and synced libraries may come from a newer version; see ignoringUnknownKeys. */
 export function normalizeLibraryStateWithMigration(
   value: unknown,
 ): LibraryScopeMigration {
+  return ignoringUnknownKeys(() => readLibraryState(value));
+}
+
+function readLibraryState(value: unknown): LibraryScopeMigration {
   const source = requiredObject(value, "library");
   assertKnownKeys(
     source,
