@@ -1,6 +1,6 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
 import type { StudyWord } from "@/core/types";
-import { normalizeWordKey } from "@/core/lib/library";
+import { descriptionPoints, normalizeWordKey } from "@/core/lib/library";
 import {
   seededRandom,
   seededShuffle,
@@ -83,7 +83,11 @@ function revealed(
   distractors: readonly Candidate[],
   gloss: (other: Candidate) => [option: string, note: string],
 ): Pick<QuestionItem, "explanation" | "whyWrong"> {
-  const explanation = word.description.trim();
+  const points = descriptionPoints(word.description);
+  const explanation =
+    points.length > 1
+      ? points.map((point) => `• ${point}`).join("\n")
+      : (points[0] ?? "");
   return {
     ...(explanation ? { explanation } : {}),
     whyWrong: Object.fromEntries(distractors.map(gloss)),

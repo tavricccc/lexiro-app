@@ -120,6 +120,21 @@ export function senseDescription(
   return description ? { description } : {};
 }
 
+/**
+ * A description holds one point per line. Bullets or numbers someone typed
+ * at the start of a line are dropped so the screens can add their own.
+ */
+export function descriptionPoints(value: string | undefined): string[] {
+  return (value ?? "")
+    .split("\n")
+    .map((line) =>
+      line
+        .replace(/^\s*(?:(?:[•・①-⑳]|\d+、)\s*|(?:[*-]|\d+[.)])\s+)/u, "")
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
 function mergeSense(
   existing: WordSense | undefined,
   incoming: WordSense,
