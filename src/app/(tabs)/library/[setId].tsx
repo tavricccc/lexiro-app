@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
+import { DescriptionPoints } from "@/components/library/description-points";
 import { setFolderOptions } from "@/components/library/folder-options";
 import { confirmDeleteQuestion } from "@/components/questions/delete-question";
 import { Button } from "@/components/ui/button";
@@ -328,12 +329,13 @@ export default function SetScreen() {
                                 {sense.meaningZh}
                               </Text>
                               {sense.description ? (
-                                <Text
+                                <DescriptionPoints
+                                  text={sense.description}
+                                  max={3}
                                   style={styles.description}
+                                  textStyle={styles.descriptionText}
                                   numberOfLines={2}
-                                >
-                                  {sense.description}
-                                </Text>
+                                />
                               ) : null}
                               {sense.examples[0] ? (
                                 <Text style={styles.example} numberOfLines={2}>
@@ -626,7 +628,6 @@ const styles = StyleSheet.create({
   example: { ...type.hint, color: colors.muted },
   // The same tinted note as the word sheet, so a remark never reads as an example.
   description: {
-    ...type.hint,
     alignSelf: "flex-start",
     marginTop: 4,
     marginBottom: 2,
@@ -636,8 +637,8 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     overflow: "hidden",
     backgroundColor: colors.brandSoft,
-    color: colors.foreground,
   },
+  descriptionText: { ...type.hint, color: colors.foreground },
   questionMeta: { ...type.hint, color: colors.muted },
   questionTitle: {
     fontSize: 17,

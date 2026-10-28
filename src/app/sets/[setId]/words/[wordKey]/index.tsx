@@ -2,6 +2,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { StyleSheet, Text, View } from "react-native";
 
+import { DescriptionPoints } from "@/components/library/description-points";
 import { Card, EmptyState, Screen } from "@/components/ui/layout";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { t } from "@/core/lib/i18n";
@@ -81,9 +82,11 @@ export default function WordDetailScreen() {
               <Text style={styles.descriptionLabel}>
                 {t("setEditor.description")}
               </Text>
-              <Text style={styles.descriptionText} selectable>
-                {sense.description}
-              </Text>
+              <DescriptionPoints
+                text={sense.description}
+                textStyle={styles.descriptionText}
+                selectable
+              />
             </View>
           ) : null}
           {sense.examples
