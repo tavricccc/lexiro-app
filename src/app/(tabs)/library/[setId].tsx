@@ -327,6 +327,14 @@ export default function SetScreen() {
                                 ) : null}
                                 {sense.meaningZh}
                               </Text>
+                              {sense.description ? (
+                                <Text
+                                  style={styles.description}
+                                  numberOfLines={2}
+                                >
+                                  {sense.description}
+                                </Text>
+                              ) : null}
                               {sense.examples[0] ? (
                                 <Text style={styles.example} numberOfLines={2}>
                                   {sense.examples[0]}
@@ -616,6 +624,20 @@ const styles = StyleSheet.create({
   pos: { ...latin.semibold, color: colors.brand },
   format: { color: colors.brand, fontWeight: "600" },
   example: { ...type.hint, color: colors.muted },
+  // The same tinted note as the word sheet, so a remark never reads as an example.
+  description: {
+    ...type.hint,
+    alignSelf: "flex-start",
+    marginTop: 4,
+    marginBottom: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.segment,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    backgroundColor: colors.brandSoft,
+    color: colors.foreground,
+  },
   questionMeta: { ...type.hint, color: colors.muted },
   questionTitle: {
     fontSize: 17,

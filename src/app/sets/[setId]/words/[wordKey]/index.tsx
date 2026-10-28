@@ -8,7 +8,7 @@ import { t } from "@/core/lib/i18n";
 import { useLibraryStore } from "@/core/stores/library-store";
 import type { WordKey } from "@/core/types";
 import { speak } from "@/lib/speech";
-import { colors, latin, type } from "@/lib/theme";
+import { colors, latin, radius, type } from "@/lib/theme";
 
 /** One word read in full: every meaning in this set with all its examples. */
 export default function WordDetailScreen() {
@@ -133,9 +133,10 @@ const styles = StyleSheet.create({
   // A tinted note so a usage remark never reads as one more example.
   description: {
     backgroundColor: colors.brandSoft,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: radius.segment,
+    borderCurve: "continuous",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 2,
   },
   descriptionLabel: { ...type.hint, color: colors.fieldDeep, fontWeight: "600" },
