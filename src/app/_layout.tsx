@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/layout";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ToastHost } from "@/components/toast-host";
 import { useCloudStore } from "@/core/stores/cloud-store";
+import { useAppUpdates } from "@/lib/app-updates";
 import { BRAND_DARK, BRAND_LIGHT, colors, fonts, plain } from "@/lib/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +33,7 @@ export default function RootLayout() {
   // A font that fails to load falls back to the system face; it never blocks.
   const [fontsLoaded, fontError] = useFonts(fonts);
   const fontsSettled = fontsLoaded || Boolean(fontError);
+  useAppUpdates();
 
   useEffect(() => {
     void hydrateLocalStorage().then(() => {

@@ -3,6 +3,9 @@
     "name": "Lexiro",
     "slug": "lexiro-app",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "lexiroapp",
@@ -39,6 +42,21 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bf47a966-dc5b-428f-9653-ee6181d44d28"
+      }
+    },
+    "owner": "tavricccc",
+    "updates": {
+      "url": "https://u.expo.dev/bf47a966-dc5b-428f-9653-ee6181d44d28",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      },
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
