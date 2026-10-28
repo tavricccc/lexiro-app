@@ -95,11 +95,12 @@ const SYNC_DEBOUNCE_MS = 3_000;
 const SYNC_MAX_DELAY_MS = 15_000;
 /**
  * A practice session marks its snapshot on every answer, yet another device
- * only needs it to resume. It waits longer, and leaving the page still sends
- * it straight away.
+ * only needs it to resume, and switching devices first hides this one, which
+ * sends it straight away. So while the page stays open it goes up only every
+ * few minutes, as a backstop for a device that closes without hiding.
  */
-const BLOB_SYNC_DEBOUNCE_MS = 30_000;
-const BLOB_SYNC_MAX_DELAY_MS = 60_000;
+const BLOB_SYNC_DEBOUNCE_MS = 5 * 60_000;
+const BLOB_SYNC_MAX_DELAY_MS = 10 * 60_000;
 /**
  * Whether the cloud's records may have moved since the last pull. A sync with
  * nothing of its own to push skips the pull while this is false; the status

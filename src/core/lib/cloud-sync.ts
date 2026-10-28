@@ -133,8 +133,15 @@ interface CloudStatus {
   changedBy: string;
   blobChangedBy: string;
 }
-/** How often a focused, visible device asks whether the cloud changed. */
-export const CLOUD_STATUS_POLL_MS = 60_000;
+/**
+ * How often a focused, visible device asks whether the cloud changed while it
+ * sits open. Edits from another device mostly arrive when this one comes back
+ * to the foreground, which polls at once, so the timer only covers a screen
+ * left open beside another device.
+ */
+export const CLOUD_STATUS_POLL_MS = 5 * 60_000;
+/** Focus and visibility often fire together; one poll answers both. */
+export const CLOUD_STATUS_WAKE_GAP_MS = 15_000;
 /**
  * One indexed status row per poll from the focused, visible device; records
  * are pulled only when changed. Background tabs stay quiet, so several open
@@ -147,7 +154,8 @@ export function watchCloudChanges(
 ): () => void {
   let seen: CloudStatus | null = null,
     stopped = false,
-    running = false;
+    running = false,
+    lastPoll = -Infinity;
   const poll = async () => {
     if (
       stopped ||
@@ -160,6 +168,7 @@ export function watchCloudChanges(
     )
       return;
     running = true;
+    lastPoll = Date.now();
     try {
       const status = await client.request<CloudStatus>("/sync/status");
       if (stopped) return;
@@ -181,10 +190,10 @@ export function watchCloudChanges(
     }
   };
   const wake = () => {
-    void poll();
+    if (Date.now() - lastPoll >= CLOUD_STATUS_WAKE_GAP_MS) void poll();
   };
   // Going online runs a full sync from the cloud store, so it needs no poll.
-  const timer = setInterval(wake, CLOUD_STATUS_POLL_MS);
+  const timer = setInterval(() => void poll(), CLOUD_STATUS_POLL_MS);
   if (typeof document !== "undefined")
     document.addEventListener("visibilitychange", wake);
   if (typeof window !== "undefined") window.addEventListener("focus", wake);
