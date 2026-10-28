@@ -1,0 +1,40 @@
+name: EAS Update
+
+# Publishes the JS bundle over the air to the production channel, which the
+# sideloaded .ipa listens on. A native change gives a new fingerprint runtime
+# version, so only an .ipa built from that commit picks its update up.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish the update
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          eas update --channel production --environment production \
+            --platform ios --non-interactive \
+            --message "$(printf '%s' "${MESSAGE:-manual}" | head -n 1)"
