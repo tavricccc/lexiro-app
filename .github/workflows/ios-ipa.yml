@@ -2,17 +2,68 @@ name: iOS IPA
 
 # Builds an unsigned Release .ipa for sideloading (AltStore, SideStore,
 # Sideloadly and similar tools re-sign it with the user's Apple ID).
+#
+# Only native changes need a new .ipa; JS reaches the phone through EAS
+# Update. So a cheap Linux job resolves the iOS fingerprint (the runtime
+# version) first, and the macOS build runs only when no unexpired artifact
+# `ios-<fingerprint>` exists yet. Run it by hand with `force` to rebuild.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if this fingerprint already has an .ipa
+        type: boolean
+        default: false
 
 concurrency:
   group: ios-ipa-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
+  fingerprint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      build: ${{ steps.resolve.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Resolve the runtime version
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          npx expo-updates runtimeversion:resolve --platform ios > "$RUNNER_TEMP/runtime.json"
+          fingerprint=$(node -p "require(process.argv[1]).runtimeVersion" "$RUNNER_TEMP/runtime.json")
+          tag="ios-${fingerprint:0:12}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          live=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$tag" \
+            --jq '[.artifacts[] | select(.expired | not)] | length')
+          if [ "$FORCE" != "true" ] && [ "$live" -gt 0 ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "An .ipa for $tag is still available; native code is unchanged." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: fingerprint
+    if: needs.fingerprint.outputs.build == 'true'
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -52,6 +103,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Lexiro-ipa
+          name: ${{ needs.fingerprint.outputs.tag }}
           path: Lexiro-*.ipa
           retention-days: 14
