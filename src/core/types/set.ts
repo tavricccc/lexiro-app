@@ -26,6 +26,7 @@ export interface EditorSenseDraft {
   examples: string[]
   /** Carried through every edit so a supplemented meaning stays marked as one. */
   supplementary: boolean
+  description: string
 }
 
 export interface WordDraft {

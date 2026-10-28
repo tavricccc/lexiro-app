@@ -76,6 +76,11 @@ export default function WordDetailScreen() {
             {sense.pos ? <Text style={styles.pos}>{sense.pos} </Text> : null}
             {sense.meaningZh}
           </Text>
+          {sense.description ? (
+            <Text style={styles.description} selectable>
+              {sense.description}
+            </Text>
+          ) : null}
           {sense.examples
             .filter((example) => example.trim())
             .map((example, index) => (
@@ -120,5 +125,6 @@ const styles = StyleSheet.create({
   meaning: { ...type.section, color: colors.foreground },
   pos: { ...latin.semibold, color: colors.brand },
   example: { ...type.body, color: colors.muted },
+  description: { ...type.body, color: colors.foreground },
   hint: { ...type.hint, color: colors.muted },
 });

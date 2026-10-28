@@ -18,6 +18,7 @@ export function setWordDrafts(state: LibraryState, setId: string) {
         meaningZh: sense.meaningZh,
         examples: sense.examples,
         supplementary: sense.supplementary,
+        description: sense.description ?? "",
       }));
   });
 }
@@ -45,6 +46,7 @@ export function prepareWordEdit(
     meaningZh: sense.meaning.trim(),
     examples: sense.examples.map((example) => example.trim()).filter(Boolean),
     supplementary: sense.supplementary,
+    description: sense.description.trim(),
   }));
   if (
     !normalizeWordKey(draft.word) ||

@@ -112,6 +112,14 @@ export function mergeUniqueStrings(
   return result;
 }
 
+/** A sense stores its description only when there is one. */
+export function senseDescription(
+  value: string | undefined,
+): { description?: string } {
+  const description = value?.trim();
+  return description ? { description } : {};
+}
+
 function mergeSense(
   existing: WordSense | undefined,
   incoming: WordSense,
@@ -171,6 +179,7 @@ export function itemToWordEntry(
         meaningZh,
         examples: mergeUniqueStrings(sense.examples),
         supplementary: sense.supplementary,
+        ...senseDescription(sense.description),
       };
     })
     .filter((sense): sense is WordSense => Boolean(sense));
@@ -222,5 +231,6 @@ export function senseToStudyWord(word: WordEntry, sense: WordSense): StudyWord {
     examples: [...sense.examples],
     example: sense.examples[0] ?? "",
     supplementary: sense.supplementary,
+    description: sense.description ?? "",
   };
 }

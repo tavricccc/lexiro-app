@@ -54,6 +54,7 @@ export default function EditWordScreen() {
       meaning: sense.meaningZh,
       examples: sense.examples.length ? sense.examples : [""],
       supplementary: sense.supplementary,
+      description: sense.description ?? "",
     })),
   };
   return (

@@ -48,6 +48,12 @@ export interface WordSense {
    * which is the more confident of the two claims.
    */
   supplementary: boolean
+  /**
+   * Textbook notes on this meaning: usage, register, collocations. Kept apart
+   * from meaningZh so a word task can show it after the answer without the
+   * prompt or the options giving the answer away. Absent when there is none.
+   */
+  description?: string
 }
 
 export interface SenseEditValue {
@@ -72,6 +78,7 @@ export interface StudyWord {
   examples: string[]
   example: string
   supplementary: boolean
+  description: string
 }
 
 export interface LibrarySet {

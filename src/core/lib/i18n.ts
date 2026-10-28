@@ -520,6 +520,8 @@ export const zhTW = {
     pos: "詞性",
     posPlaceholder: "例如：v.",
     meaning: "中文意思",
+    description: "補充說明",
+    descriptionPlaceholder: "用法、搭配詞等，練習答題後才顯示",
     meaningPlaceholder: "例如：漫遊、閒逛",
     examplePlaceholder: "輸入一個英文例句",
     addWord: "再加一個單字",

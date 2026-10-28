@@ -227,6 +227,8 @@ function optionNotes(item: QuestionItem) {
     if (!reason || isCorrectChoice(item, index)) return [];
     // A discourse bank's own answers are explained at their blanks.
     if (item.type === "discourse" && used.has(option)) return [];
+    // A word task's reason is the option's own meaning, never a sentence.
+    if (isWordTask(item.type)) return [{ option, index, gloss: reason }];
     const parts = splitOptionReason(reason);
     // Older word-bank sets carry nine long reasons per blank; keep the meanings.
     if (item.type === "wordBank" && !parts.gloss) return [];

@@ -50,6 +50,7 @@ export async function copySharedSet(
         meaningZh: sense.meaningZh,
         pos: sense.pos,
         supplementary: sense.supplementary,
+        description: sense.description ?? "",
         word: word.word,
       };
     });

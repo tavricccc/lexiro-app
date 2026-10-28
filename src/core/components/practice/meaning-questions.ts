@@ -27,6 +27,7 @@ function meaningParts(meaning: string): string[] {
 interface Candidate {
   spelling: string;
   word: string;
+  pos: string;
   meaning: string;
   key: string;
   parts: string[];
@@ -36,6 +37,7 @@ function toCandidates(words: readonly StudyWord[]): Candidate[] {
   return words.map((word) => ({
     spelling: normalizeWordKey(word.word),
     word: word.word.trim(),
+    pos: word.pos.trim(),
     meaning: word.meaning.trim(),
     key: meaningKey(word.meaning),
     parts: meaningParts(word.meaning),
@@ -70,6 +72,22 @@ function pickDistractors(
   for (let step = 0; step < candidates.length && picked.length < 3; step += 1)
     consider((start + step) % candidates.length);
   return picked;
+}
+
+/**
+ * What the answer reveals: the sense's textbook notes, and what each wrong
+ * option means, so a miss shows the word you mixed it up with.
+ */
+function revealed(
+  word: StudyWord,
+  distractors: readonly Candidate[],
+  gloss: (other: Candidate) => [option: string, note: string],
+): Pick<QuestionItem, "explanation" | "whyWrong"> {
+  const explanation = word.description.trim();
+  return {
+    ...(explanation ? { explanation } : {}),
+    whyWrong: Object.fromEntries(distractors.map(gloss)),
+  };
 }
 
 /** Every sense may supply the answer, but none may appear as a distractor. */
@@ -111,10 +129,13 @@ export function buildMeaningQuestionGroups(
         seen.add(other.key);
         return true;
       },
-    ).map((other) => other.meaning);
+    );
     if (distractors.length !== 3) return [];
     const id = `meaning:${word.id}`;
-    const options = seededShuffle([word.meaning.trim(), ...distractors], id);
+    const options = seededShuffle(
+      [word.meaning.trim(), ...distractors.map((other) => other.meaning)],
+      id,
+    );
     return [
       [
         {
@@ -129,6 +150,7 @@ export function buildMeaningQuestionGroups(
           difficulty: 1 as const,
           meaning: acceptedMeanings.join("；"),
           acceptedMeanings,
+          ...revealed(word, distractors, (other) => [other.meaning, other.word]),
         },
       ],
     ];
@@ -156,10 +178,13 @@ export function buildReverseQuestionGroups(
         seen.add(other.spelling);
         return true;
       },
-    ).map((other) => other.word);
+    );
     if (distractors.length !== 3) return [];
     const id = `reverse:${word.id}`;
-    const options = seededShuffle([answer, ...distractors], id);
+    const options = seededShuffle(
+      [answer, ...distractors.map((other) => other.word)],
+      id,
+    );
     return [
       [
         {
@@ -173,6 +198,10 @@ export function buildReverseQuestionGroups(
           type: "reverse" as const,
           difficulty: 1 as const,
           meaning: word.meaning.trim(),
+          ...revealed(word, distractors, (other) => [
+            other.word,
+            [other.pos, other.meaning].filter(Boolean).join(" "),
+          ]),
         },
       ],
     ];

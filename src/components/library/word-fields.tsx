@@ -21,6 +21,7 @@ export const emptySense = (): SenseDraft => ({
   meaning: "",
   examples: [""],
   supplementary: false,
+  description: "",
 });
 
 export const emptyWordDraft = (): WordDraft => ({
@@ -148,6 +149,13 @@ export function WordFields({
               invalid={submitted && !sense.meaning.trim()}
               placeholder={t("setEditor.meaningPlaceholder")}
               onChangeText={(meaning) => updateSense(index, { meaning })}
+            />
+            <TextBlockRow
+              label={t("setEditor.description")}
+              value={sense.description}
+              editable={!busy}
+              placeholder={t("setEditor.descriptionPlaceholder")}
+              onChangeText={(description) => updateSense(index, { description })}
             />
             {ExampleRows({
               values: sense.examples,
