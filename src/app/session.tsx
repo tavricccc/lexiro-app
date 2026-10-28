@@ -174,8 +174,22 @@ function Session({ run }: { run: PracticeRun }) {
     if (current?.item.type === "meaning") speak(current.item.prompt);
   }, [current]);
 
-  const answer = (choice: number) => {
+  // A tap only picks; the answer counts once it is confirmed, as on the web.
+  const [pending, setPending] = useState<{ id: string; choice: number } | null>(
+    null,
+  );
+  const pendingChoice =
+    pending && current && pending.id === current.id ? pending.choice : null;
+  const pick = (choice: number) => {
     if (reviewing || selected !== null || !current) return;
+    void Haptics.selectionAsync();
+    setPending({ id: current.id, choice });
+  };
+  const confirm = () => {
+    if (pendingChoice === null || reviewing || selected !== null || !current)
+      return;
+    const choice = pendingChoice;
+    setPending(null);
     actions.answer(choice);
     void Haptics.notificationAsync(
       isCorrectChoice(current.item, choice)
@@ -233,7 +247,8 @@ function Session({ run }: { run: PracticeRun }) {
   const passageId =
     viewed.item.question?.kind === "reading" ? viewed.item.question.id : null;
   const isMarked = marked.includes(viewPosition);
-  const showDock = canGoBack || reviewing || answered;
+  const showDock =
+    canGoBack || reviewing || answered || pendingChoice !== null;
 
   return (
     <View style={styles.root}>
@@ -267,9 +282,10 @@ function Session({ run }: { run: PracticeRun }) {
             key={viewed.id}
             item={viewed.item}
             selected={viewedChoice}
+            pending={reviewing ? null : pendingChoice}
             readOnly={reviewing}
             answeredBlanks={answeredBlanks}
-            onAnswer={answer}
+            onAnswer={pick}
           />
         </Animated.View>
       </ScrollView>
@@ -304,6 +320,13 @@ function Session({ run }: { run: PracticeRun }) {
               }
               icon={index === total - 1 ? "flag.checkered" : "arrow.right"}
               onPress={() => actions.next()}
+              style={styles.dockPrimary}
+            />
+          ) : pendingChoice !== null ? (
+            <Button
+              label={t("practice.confirm")}
+              icon="checkmark"
+              onPress={confirm}
               style={styles.dockPrimary}
             />
           ) : null}

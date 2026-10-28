@@ -35,12 +35,15 @@ type Pane = "question" | "passage";
 export function QuestionView({
   item,
   selected,
+  pending = null,
   readOnly,
   answeredBlanks,
   onAnswer,
 }: {
   item: QuestionItem;
   selected: number | null;
+  /** The option picked but not yet confirmed. */
+  pending?: number | null;
   /** An earlier question looked back at: it shows what was recorded. */
   readOnly: boolean;
   answeredBlanks: AnsweredBlanks;
@@ -55,7 +58,7 @@ export function QuestionView({
   const wordTask = isWordTask(item.type);
 
   const optionState = (index: number): OptionState => {
-    if (!answered) return "idle";
+    if (!answered) return pending === index ? "chosen" : "idle";
     if (isCorrectChoice(item, index)) return "right";
     return selected === index ? "wrong" : "dim";
   };

@@ -33,6 +33,9 @@ export default function TryQuestionScreen() {
   );
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<Record<string, number>>({});
+  const [pending, setPending] = useState<{ id: string; choice: number } | null>(
+    null,
+  );
 
   const header = (
     <Stack.Toolbar placement="right">
@@ -68,8 +71,16 @@ export default function TryQuestionScreen() {
         answer: other.options[other.answerIndex],
       };
 
-  const answer = (choice: number) => {
+  const pendingChoice = pending?.id === item.id ? pending.choice : null;
+  const pick = (choice: number) => {
     if (answered) return;
+    void Haptics.selectionAsync();
+    setPending({ id: item.id, choice });
+  };
+  const confirm = () => {
+    if (answered || pendingChoice === null) return;
+    const choice = pendingChoice;
+    setPending(null);
     setChoices((current) => ({ ...current, [item.id]: choice }));
     void Haptics.notificationAsync(
       isCorrectChoice(item, choice)
@@ -86,10 +97,20 @@ export default function TryQuestionScreen() {
         key={item.id}
         item={item}
         selected={selected}
+        pending={pendingChoice}
         readOnly={false}
         answeredBlanks={answeredBlanks}
-        onAnswer={answer}
+        onAnswer={pick}
       />
+      {!answered && pendingChoice !== null ? (
+        <View style={styles.actions}>
+          <Button
+            label={t("practice.confirm")}
+            icon="checkmark"
+            onPress={confirm}
+          />
+        </View>
+      ) : null}
       {answered ? (
         <View style={styles.actions}>
           {last ? (
