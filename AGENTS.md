@@ -39,3 +39,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Lexiro specifics (learned the hard way)
+
+- Node 24 comes from nvm and loads only in interactive bash: run tools as `bash -ic '<cmd>'`.
+- After pulling any of the three repos (`lexiro-app`, `../lexiro`, `../lexiro-worker`), run `npm ci` there before checks. A stale `node_modules` (an old `@lexiro/agent-contract`, the pre-Vite web deps) shows up as failing tests that are not real.
+- `src/core` mirrors the web repo (`../lexiro/src/lib`, `src/types`, parts of `lib` and `components/practice`), see `scripts/sync-core.mjs`. Change the web file first, then mirror the same edit here; the copies differ only in import paths and the "Synced from" header. Only run the sync script when the web repo has nothing unrelated you would drag in.
+- This repo has no test runner. Checks: `npx tsc --noEmit`, `npx expo lint`, `npx expo export --platform ios` (bundle smoke test).
+- Distribution: `.github/workflows/ios-ipa.yml` builds an unsigned .ipa for sideloading; `.github/workflows/eas-update.yml` publishes every push to main as an EAS Update on channel `production` (needs the `EXPO_TOKEN` repo secret). `runtimeVersion` uses the fingerprint policy, so a change to native code or native config only reaches the phone through a new .ipa; JS-only changes arrive over the air. expo-updates is off in development and Expo Go. `src/lib/app-updates.ts` checks on foreground and applies a downloaded update after ten minutes away.
+- A sense `description` holds one point per line (`\n`), with no bullets or numbers typed in; screens render it with `DescriptionPoints` (`src/components/library/description-points.tsx`) and `descriptionPoints()` from `@/core/lib/library`. `meaningZh` is only the Chinese meaning, because it is shown as an answer option.

@@ -10,8 +10,9 @@ Read this first, then `README.md`.
   `PlatformColor`). Do not port the web app's visual design. Keep only the
   brand color (`#3f7c5a` light / `#8ecdab` dark, see `src/lib/theme.ts`) and
   the product's structure (library → sets → words; practice; account).
-- Expo SDK 57 in Expo Go. Do not add native modules that Expo Go lacks; a dev
-  client or .ipa build has not been set up.
+- Expo SDK 57. Day-to-day development runs in Expo Go; the phone runs a
+  sideloaded .ipa from CI that takes JS updates over the air (see AGENTS.md).
+  A native module Expo Go lacks needs a new .ipa and can't be tried in Expo Go.
 - UI text is Traditional Chinese (Taiwan). Talk to the user in 繁體中文.
 - User preferences:
   - Ask before commit, push, install or any external action, unless the user
