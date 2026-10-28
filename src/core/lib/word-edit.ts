@@ -3,24 +3,27 @@ import type { LibraryState, WordDraft, WordKey } from "@/core/types";
 import {
   buildSenseId,
   buildSetWordKey,
+  compareWords,
   normalizePartOfSpeech,
   normalizeWordKey,
 } from "./library";
 
 export function setWordDrafts(state: LibraryState, setId: string) {
-  return (state.memberships[setId] ?? []).flatMap((membership) => {
-    const entry = state.words[membership.wordKey];
-    return entry.senses
-      .filter((sense) => membership.senseIds.includes(sense.id))
-      .map((sense) => ({
-        word: entry.word,
-        pos: sense.pos,
-        meaningZh: sense.meaningZh,
-        examples: sense.examples,
-        supplementary: sense.supplementary,
-        description: sense.description ?? "",
-      }));
-  });
+  return (state.memberships[setId] ?? [])
+    .flatMap((membership) => {
+      const entry = state.words[membership.wordKey];
+      return entry.senses
+        .filter((sense) => membership.senseIds.includes(sense.id))
+        .map((sense) => ({
+          word: entry.word,
+          pos: sense.pos,
+          meaningZh: sense.meaningZh,
+          examples: sense.examples,
+          supplementary: sense.supplementary,
+          description: sense.description ?? "",
+        }));
+    })
+    .sort((a, b) => compareWords(a.word, b.word));
 }
 
 /** Build against the latest library at save time, replacing only this word's rows. */

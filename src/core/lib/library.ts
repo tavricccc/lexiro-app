@@ -21,6 +21,16 @@ export function normalizeWordKey(word: string): WordKey {
   return word.trim().toLocaleLowerCase().replace(/\s+/g, " ") as WordKey;
 }
 
+const wordCollator = new Intl.Collator("en", {
+  sensitivity: "base",
+  numeric: true,
+});
+
+/** A to Z by spelling, case and accents aside; sets always list words this way. */
+export function compareWords(a: string, b: string): number {
+  return wordCollator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
 /** Persisted words belong to one set; spelling is only the within-set lookup key. */
 export function buildSetWordKey(setId: string, word: string): WordKey {
   return `word-${canonicalHash({ setId, word: normalizeWordKey(word) })}` as WordKey;
@@ -113,9 +123,9 @@ export function mergeUniqueStrings(
 }
 
 /** A sense stores its description only when there is one. */
-export function senseDescription(
-  value: string | undefined,
-): { description?: string } {
+export function senseDescription(value: string | undefined): {
+  description?: string;
+} {
   const description = value?.trim();
   return description ? { description } : {};
 }

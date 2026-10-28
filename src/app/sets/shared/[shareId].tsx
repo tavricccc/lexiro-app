@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/layout";
 import { ListGroup } from "@/components/ui/list";
 import { swapIn } from "@/components/ui/motion";
 import { t } from "@/core/lib/i18n";
+import { compareWords } from "@/core/lib/library";
 import { copySharedSet } from "@/core/lib/set-share";
 import { createUniqueSetName } from "@/core/lib/set-name";
 import { readSharedSet, type SharedSetView } from "@/core/lib/share-client";
@@ -52,14 +53,16 @@ export default function SharedSetScreen() {
     const wordsByKey = new Map(
       view.set.words.map((word) => [word.wordKey, word]),
     );
-    return view.set.memberships.flatMap((membership) => {
-      const word = wordsByKey.get(membership.wordKey);
-      if (!word) return [];
-      const senses = word.senses.filter((sense) =>
-        membership.senseIds.includes(sense.id),
-      );
-      return [{ key: membership.wordKey, word: word.word, senses }];
-    });
+    return view.set.memberships
+      .flatMap((membership) => {
+        const word = wordsByKey.get(membership.wordKey);
+        if (!word) return [];
+        const senses = word.senses.filter((sense) =>
+          membership.senseIds.includes(sense.id),
+        );
+        return [{ key: membership.wordKey, word: word.word, senses }];
+      })
+      .sort((a, b) => compareWords(a.word, b.word));
   }, [view]);
 
   const header = (
