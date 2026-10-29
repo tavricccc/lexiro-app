@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,7 +32,6 @@ import { usePersistPracticeSession } from "@/core/components/practice/use-practi
 import { usePracticeSessionActions } from "@/core/components/practice/use-practice-session-actions";
 import { t } from "@/core/lib/i18n";
 import type { SenseId } from "@/core/types";
-import { speak } from "@/lib/speech";
 import { colors, latin, space, type } from "@/lib/theme";
 
 /** The sheet slides up first; the session is drawn once it is in place. */
@@ -175,11 +174,6 @@ function Session({ run }: { run: PracticeRun }) {
       setWrong,
     },
   });
-
-  // 英選中 reads the English prompt aloud; 中選英 would give the answer away.
-  useEffect(() => {
-    if (current?.item.type === "meaning") speak(current.item.prompt);
-  }, [current]);
 
   // A tap only picks; the answer counts once it is confirmed, as on the web.
   const [pending, setPending] = useState<{ id: string; choice: number } | null>(

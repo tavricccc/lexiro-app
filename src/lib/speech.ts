@@ -48,10 +48,13 @@ export function speak(text: string) {
 
   const start = () => {
     if (request !== generation) return;
-    Speech.speak(
-      text,
-      voice ? { voice, language: LANGUAGE } : { language: LANGUAGE },
-    );
+    // Its own audio session lets iOS speak with the ring switch on silent:
+    // a word read aloud is asked for, like a video's sound, not a ringtone.
+    Speech.speak(text, {
+      language: LANGUAGE,
+      useApplicationAudioSession: false,
+      ...(voice ? { voice } : {}),
+    });
   };
 
   // Android and web pick a system voice from the language alone; only iOS
