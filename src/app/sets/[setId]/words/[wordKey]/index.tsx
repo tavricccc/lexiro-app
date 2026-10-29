@@ -29,6 +29,19 @@ export default function WordDetailScreen() {
 
   const header = (
     <Stack.Toolbar placement="right">
+      {word && senses?.length ? (
+        <Stack.Toolbar.Button
+          icon="pencil"
+          onPress={() =>
+            router.push({
+              pathname: "/sets/[setId]/words/[wordKey]/edit",
+              params: { setId, wordKey },
+            })
+          }
+        >
+          {t("setDetail.editWord")}
+        </Stack.Toolbar.Button>
+      ) : null}
       <Stack.Toolbar.Button variant="done" onPress={() => router.back()}>
         完成
       </Stack.Toolbar.Button>

@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import {
@@ -20,7 +20,7 @@ import { useLibraryStore } from "@/core/stores/library-store";
  * unfinished session elsewhere is left as it was.
  */
 export default function TryQuestionScreen() {
-  const { questionId } = useLocalSearchParams<{
+  const { setId, questionId } = useLocalSearchParams<{
     setId: string;
     questionId: string;
   }>();
@@ -31,6 +31,13 @@ export default function TryQuestionScreen() {
     () => (question ? (buildQuestionGroups([question], state.words)[0] ?? []) : []),
     [question, state.words],
   );
+  // Deleted from its editor: the editor goes back, and so does this page,
+  // rather than staying behind on an empty screen.
+  const seen = useRef(false);
+  useEffect(() => {
+    if (question) seen.current = true;
+    else if (seen.current) router.back();
+  }, [question]);
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<Record<string, number>>({});
   const [pending, setPending] = useState<{ id: string; choice: number } | null>(
@@ -39,6 +46,19 @@ export default function TryQuestionScreen() {
 
   const header = (
     <Stack.Toolbar placement="right">
+      {question ? (
+        <Stack.Toolbar.Button
+          icon="pencil"
+          onPress={() =>
+            router.push({
+              pathname: "/sets/[setId]/questions/[questionId]/edit",
+              params: { setId, questionId },
+            })
+          }
+        >
+          編輯題目
+        </Stack.Toolbar.Button>
+      ) : null}
       <Stack.Toolbar.Button variant="done" onPress={() => router.back()}>
         完成
       </Stack.Toolbar.Button>
