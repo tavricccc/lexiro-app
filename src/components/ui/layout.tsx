@@ -3,6 +3,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   type ScrollViewProps,
   type ViewStyle,
@@ -14,6 +15,20 @@ import { colors, radius, space, type } from "@/lib/theme";
 import { Bubble } from "./bubble";
 import { swapIn } from "./motion";
 import { useTransitionDone } from "./use-transition-done";
+
+/**
+ * On an iPad a page keeps a phone-like reading column instead of running
+ * the full width of the screen; a passage and its question get a wider one
+ * side by side.
+ */
+export const CONTENT_MAX_WIDTH = 720;
+export const SPLIT_MAX_WIDTH = 1120;
+const SPLIT_MIN_WINDOW = 960;
+
+/** Whether the window has room for a passage beside its question. */
+export function useSplitView() {
+  return useWindowDimensions().width >= SPLIT_MIN_WINDOW;
+}
 
 /**
  * A scrolling page on the canvas, under the native large title. The body
@@ -79,7 +94,12 @@ export function EmptyState({
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.canvas },
   content: { padding: space.gutter, paddingBottom: 48 },
-  body: { gap: space.section },
+  body: {
+    gap: space.section,
+    width: "100%",
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: "center",
+  },
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.card,

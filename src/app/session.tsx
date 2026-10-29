@@ -16,7 +16,12 @@ import {
 } from "@/components/practice/question-view";
 import { ResultView } from "@/components/practice/result-view";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/layout";
+import {
+  CONTENT_MAX_WIDTH,
+  EmptyState,
+  SPLIT_MAX_WIDTH,
+  useSplitView,
+} from "@/components/ui/layout";
 import { enterDown, slideNext, swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { ProgressBar } from "@/components/ui/progress";
@@ -71,6 +76,7 @@ export default function SessionScreen() {
 /** The web's practice session: one queue, answered in order, saved as it goes. */
 function Session({ run }: { run: PracticeRun }) {
   const insets = useSafeAreaInsets();
+  const split = useSplitView();
   const saved = run.snapshot;
   const { choices } = run;
   const [entries, setEntries] = useState<PracticeEntry[] | null>(run.entries);
@@ -248,91 +254,98 @@ function Session({ run }: { run: PracticeRun }) {
   const passageId =
     viewed.item.question?.kind === "reading" ? viewed.item.question.id : null;
   const isMarked = marked.includes(viewPosition);
-  const showDock =
-    canGoBack || reviewing || answered || pendingChoice !== null;
+  const showDock = canGoBack || reviewing || answered || pendingChoice !== null;
 
   return (
     <View style={styles.root}>
-      <TopBar
-        progress={progress}
-        label={t("practice.progress", { current: viewPosition + 1, total })}
-        marked={isMarked}
-        onMark={toggleMark}
-        onSkip={!reviewing && selected === null ? actions.skip : undefined}
-      />
-      {reviewing ? (
-        <Animated.Text entering={swapIn} style={styles.reviewing}>
-          {t("practice.reviewing")}
-        </Animated.Text>
-      ) : null}
-      <ScrollView
-        contentContainerStyle={[
-          styles.question,
-          { paddingBottom: 120 + insets.bottom },
+      <View
+        style={[
+          styles.column,
+          {
+            maxWidth: passageId && split ? SPLIT_MAX_WIDTH : CONTENT_MAX_WIDTH,
+          },
         ]}
       >
-        <Animated.View
-          key={passageId ? `passage:${passageId}` : viewed.id}
-          entering={
-            actions.animateNextCard
-              ? slideNext
-              : undefined
-          }
+        <TopBar
+          progress={progress}
+          label={t("practice.progress", { current: viewPosition + 1, total })}
+          marked={isMarked}
+          onMark={toggleMark}
+          onSkip={!reviewing && selected === null ? actions.skip : undefined}
+        />
+        {reviewing ? (
+          <Animated.Text entering={swapIn} style={styles.reviewing}>
+            {t("practice.reviewing")}
+          </Animated.Text>
+        ) : null}
+        <ScrollView
+          contentContainerStyle={[
+            styles.question,
+            { paddingBottom: 120 + insets.bottom },
+          ]}
         >
-          <QuestionView
-            key={viewed.id}
-            item={viewed.item}
-            selected={viewedChoice}
-            pending={reviewing ? null : pendingChoice}
-            readOnly={reviewing}
-            answeredBlanks={answeredBlanks}
-            onAnswer={pick}
-          />
-        </Animated.View>
-      </ScrollView>
+          <Animated.View
+            key={passageId ? `passage:${passageId}` : viewed.id}
+            entering={actions.animateNextCard ? slideNext : undefined}
+          >
+            <QuestionView
+              key={viewed.id}
+              item={viewed.item}
+              selected={viewedChoice}
+              pending={reviewing ? null : pendingChoice}
+              readOnly={reviewing}
+              answeredBlanks={answeredBlanks}
+              onAnswer={pick}
+            />
+          </Animated.View>
+        </ScrollView>
 
-      {showDock ? (
-        <Animated.View
-          entering={enterDown}
-          style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 16) }]}
-        >
-          {canGoBack ? (
-            <Button
-              label={t("practice.previous")}
-              icon="chevron.left"
-              variant="ghost"
-              onPress={goPrevious}
-              style={styles.dockSecondary}
-            />
-          ) : null}
-          {reviewing ? (
-            <Button
-              label={t("practice.forward")}
-              icon="chevron.right"
-              onPress={goForward}
-              style={styles.dockPrimary}
-            />
-          ) : answered ? (
-            <Button
-              label={
-                index === total - 1
-                  ? t("practice.viewResult")
-                  : t("practice.next")
-              }
-              icon={index === total - 1 ? "flag.checkered" : "arrow.right"}
-              onPress={() => actions.next()}
-              style={styles.dockPrimary}
-            />
-          ) : pendingChoice !== null ? (
-            <Button
-              label={t("practice.confirm")}
-              icon="checkmark"
-              onPress={confirm}
-              style={styles.dockPrimary}
-            />
-          ) : null}
-        </Animated.View>
-      ) : null}
+        {showDock ? (
+          <Animated.View
+            entering={enterDown}
+            style={[
+              styles.dock,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
+          >
+            {canGoBack ? (
+              <Button
+                label={t("practice.previous")}
+                icon="chevron.left"
+                variant="ghost"
+                onPress={goPrevious}
+                style={styles.dockSecondary}
+              />
+            ) : null}
+            {reviewing ? (
+              <Button
+                label={t("practice.forward")}
+                icon="chevron.right"
+                onPress={goForward}
+                style={styles.dockPrimary}
+              />
+            ) : answered ? (
+              <Button
+                label={
+                  index === total - 1
+                    ? t("practice.viewResult")
+                    : t("practice.next")
+                }
+                icon={index === total - 1 ? "flag.checkered" : "arrow.right"}
+                onPress={() => actions.next()}
+                style={styles.dockPrimary}
+              />
+            ) : pendingChoice !== null ? (
+              <Button
+                label={t("practice.confirm")}
+                icon="checkmark"
+                onPress={confirm}
+                style={styles.dockPrimary}
+              />
+            ) : null}
+          </Animated.View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -417,6 +430,7 @@ function RoundButton({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
+  column: { flex: 1, width: "100%", alignSelf: "center" },
   topBar: {
     flexDirection: "row",
     alignItems: "center",

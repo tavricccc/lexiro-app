@@ -5,6 +5,7 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/ui/button";
+import { CONTENT_MAX_WIDTH } from "@/components/ui/layout";
 import {
   buildPracticeQueue,
   type PracticeEntry,
@@ -44,6 +45,7 @@ export function ResultView({
     <ScrollView
       contentContainerStyle={[
         styles.content,
+        styles.column,
         { paddingBottom: 40 + insets.bottom },
       ]}
     >
@@ -163,6 +165,7 @@ function NewRoundButton({
 }
 
 const styles = StyleSheet.create({
+  column: { width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center" },
   content: { padding: space.gutter, gap: space.section },
   // The one green field of the session, ink on it as on the printed card.
   finish: {

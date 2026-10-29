@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { handOffRun } from "@/components/practice/practice-run";
 import { ResumeChoice } from "@/components/resume-choice";
 import { Button } from "@/components/ui/button";
-import { EmptyState, Screen } from "@/components/ui/layout";
+import { CONTENT_MAX_WIDTH, EmptyState, Screen } from "@/components/ui/layout";
 import {
   ListGroup,
   MultiPickerRow,
@@ -419,7 +419,6 @@ function PracticeSetup() {
                 </Animated.View>
               ) : null}
             </View>
-
           </>
         )}
       </Screen>
@@ -475,13 +474,14 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   customRange: { flexDirection: "row", justifyContent: "space-between" },
-  start: { minHeight: 60 },
+  start: { minHeight: 60, width: "100%", maxWidth: CONTENT_MAX_WIDTH },
   // The start action stays at the bottom while the scope list scrolls.
   dock: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
+    alignItems: "center",
     paddingTop: 12,
     paddingHorizontal: space.gutter,
     backgroundColor: colors.canvas,

@@ -6,7 +6,7 @@ import Animated from "react-native-reanimated";
 import { AnswerOption, type OptionState } from "@/components/answer-option";
 import { PassageText } from "@/components/rooms/passage-text";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/layout";
+import { Card, useSplitView } from "@/components/ui/layout";
 import { enterDown, swapIn } from "@/components/ui/motion";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Segmented } from "@/components/ui/segmented";
@@ -30,7 +30,8 @@ type Pane = "question" | "passage";
 
 /**
  * One practice question. A reading item gets the web's 題目 / 文章 switch so
- * the passage has the whole screen when it is read.
+ * the passage has the whole screen when it is read; on a wide iPad window the
+ * passage sits beside the question instead, as on the web's desktop layout.
  */
 export function QuestionView({
   item,
@@ -50,6 +51,7 @@ export function QuestionView({
   onAnswer: (choice: number) => void;
 }) {
   const [pane, setPane] = useState<Pane>("question");
+  const split = useSplitView();
   const passage = item.question?.kind === "reading" ? item.question : null;
   const childIndex = passage?.questions.findIndex(
     (child) => item.id === `reading:${passage.id}:${child.id}`,
@@ -62,6 +64,134 @@ export function QuestionView({
     if (isCorrectChoice(item, index)) return "right";
     return selected === index ? "wrong" : "dim";
   };
+
+  // The question and its options; `locate` offers the jump to the passage
+  // pane, which a side-by-side layout does not need.
+  const questionBody = (locate: boolean) => (
+    <>
+      <View style={styles.head}>
+        <Text style={styles.task}>
+          {passage && childIndex !== undefined && childIndex >= 0
+            ? `${practiceTaskLabel(item.type)} · ${t(
+                "practice.questionPosition",
+                {
+                  current: childIndex + 1,
+                  total: passage.questions.length,
+                },
+              )}`
+            : practiceTaskLabel(item.type)}
+        </Text>
+        <View style={styles.promptRow}>
+          <Text
+            selectable
+            {...(wordTask && !item.blank && isSingleTerm(item.prompt)
+              ? {
+                  numberOfLines: 1,
+                  adjustsFontSizeToFit: true,
+                  minimumFontScale: isLatin(item.prompt) ? 0.5 : 0.6,
+                }
+              : {})}
+            style={
+              wordTask
+                ? [
+                    styles.wordPrompt,
+                    isLatin(item.prompt)
+                      ? styles.wordPromptLatin
+                      : styles.wordPromptZh,
+                  ]
+                : styles.prompt
+            }
+          >
+            {item.blank
+              ? t("questions.blankLabel", { index: item.blank })
+              : item.prompt}
+          </Text>
+          {item.type === "meaning" ? (
+            <PressableScale
+              scaleTo={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={t("practice.speak")}
+              hitSlop={10}
+              onPress={() => speak(item.prompt)}
+              style={styles.speak}
+            >
+              <SymbolView
+                name="speaker.wave.2.fill"
+                size={18}
+                tintColor={colors.fieldInk}
+              />
+            </PressableScale>
+          ) : null}
+        </View>
+        {item.blank && locate ? (
+          <Button
+            label={t("practice.locateBlank", { index: item.blank })}
+            icon="doc.text.magnifyingglass"
+            variant="ghost"
+            onPress={() => setPane("passage")}
+          />
+        ) : null}
+        {item.optionBank ? (
+          <Text style={styles.hint}>{t("practice.sharedBankHint")}</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.options}>
+        {item.options.map((option, index) => {
+          const used = usedBlankForOption(item, index, answeredBlanks);
+          return (
+            <AnswerOption
+              key={`${item.id}:${index}`}
+              letter={String.fromCharCode(65 + index)}
+              label={option}
+              note={
+                used !== undefined && !answered
+                  ? t("practice.usedInBlank", { index: used })
+                  : undefined
+              }
+              state={optionState(index)}
+              celebrate={
+                !readOnly && selected === index && isCorrectChoice(item, index)
+              }
+              disabled={readOnly || (used !== undefined && !answered)}
+              onPress={() => onAnswer(index)}
+            />
+          );
+        })}
+      </View>
+
+      {readOnly && !answered ? (
+        <Text style={styles.hint}>{t("practice.skippedNote")}</Text>
+      ) : null}
+      {answered ? <Feedback item={item} selected={selected} /> : null}
+    </>
+  );
+
+  const passageCard = passage ? (
+    <Card style={styles.passage}>
+      <Text style={styles.passageTitle}>{passage.title}</Text>
+      <PassageText
+        passage={passage.passage}
+        activeBlank={item.blank}
+        answeredBlanks={Object.fromEntries(
+          Object.entries(answeredBlanks).map(([blank, value]) => [
+            blank,
+            value.answer,
+          ]),
+        )}
+      />
+    </Card>
+  ) : null;
+
+  if (passage && split)
+    return (
+      <View style={styles.split}>
+        <View style={styles.splitPane}>{passageCard}</View>
+        <View style={[styles.splitPane, styles.stack]}>
+          {questionBody(false)}
+        </View>
+      </View>
+    );
 
   return (
     <View style={styles.stack}>
@@ -78,19 +208,7 @@ export function QuestionView({
 
       {passage && pane === "passage" ? (
         <Animated.View key="passage" entering={swapIn} style={styles.stack}>
-          <Card style={styles.passage}>
-            <Text style={styles.passageTitle}>{passage.title}</Text>
-            <PassageText
-              passage={passage.passage}
-              activeBlank={item.blank}
-              answeredBlanks={Object.fromEntries(
-                Object.entries(answeredBlanks).map(([blank, value]) => [
-                  blank,
-                  value.answer,
-                ]),
-              )}
-            />
-          </Card>
+          {passageCard}
           <Button
             label={t("practice.backToQuestion")}
             icon="text.bubble"
@@ -100,103 +218,7 @@ export function QuestionView({
         </Animated.View>
       ) : (
         <Animated.View key="question" entering={swapIn} style={styles.stack}>
-          <View style={styles.head}>
-            <Text style={styles.task}>
-              {passage && childIndex !== undefined && childIndex >= 0
-                ? `${practiceTaskLabel(item.type)} · ${t(
-                    "practice.questionPosition",
-                    {
-                      current: childIndex + 1,
-                      total: passage.questions.length,
-                    },
-                  )}`
-                : practiceTaskLabel(item.type)}
-            </Text>
-            <View style={styles.promptRow}>
-              <Text
-                selectable
-                {...(wordTask && !item.blank && isSingleTerm(item.prompt)
-                  ? {
-                      numberOfLines: 1,
-                      adjustsFontSizeToFit: true,
-                      minimumFontScale: isLatin(item.prompt) ? 0.5 : 0.6,
-                    }
-                  : {})}
-                style={
-                  wordTask
-                    ? [
-                        styles.wordPrompt,
-                        isLatin(item.prompt)
-                          ? styles.wordPromptLatin
-                          : styles.wordPromptZh,
-                      ]
-                    : styles.prompt
-                }
-              >
-                {item.blank
-                  ? t("questions.blankLabel", { index: item.blank })
-                  : item.prompt}
-              </Text>
-              {item.type === "meaning" ? (
-                <PressableScale
-                  scaleTo={0.85}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("practice.speak")}
-                  hitSlop={10}
-                  onPress={() => speak(item.prompt)}
-                  style={styles.speak}
-                >
-                  <SymbolView
-                    name="speaker.wave.2.fill"
-                    size={18}
-                    tintColor={colors.fieldInk}
-                  />
-                </PressableScale>
-              ) : null}
-            </View>
-            {item.blank ? (
-              <Button
-                label={t("practice.locateBlank", { index: item.blank })}
-                icon="doc.text.magnifyingglass"
-                variant="ghost"
-                onPress={() => setPane("passage")}
-              />
-            ) : null}
-            {item.optionBank ? (
-              <Text style={styles.hint}>{t("practice.sharedBankHint")}</Text>
-            ) : null}
-          </View>
-
-          <View style={styles.options}>
-            {item.options.map((option, index) => {
-              const used = usedBlankForOption(item, index, answeredBlanks);
-              return (
-                <AnswerOption
-                  key={`${item.id}:${index}`}
-                  letter={String.fromCharCode(65 + index)}
-                  label={option}
-                  note={
-                    used !== undefined && !answered
-                      ? t("practice.usedInBlank", { index: used })
-                      : undefined
-                  }
-                  state={optionState(index)}
-                  celebrate={
-                    !readOnly &&
-                    selected === index &&
-                    isCorrectChoice(item, index)
-                  }
-                  disabled={readOnly || (used !== undefined && !answered)}
-                  onPress={() => onAnswer(index)}
-                />
-              );
-            })}
-          </View>
-
-          {readOnly && !answered ? (
-            <Text style={styles.hint}>{t("practice.skippedNote")}</Text>
-          ) : null}
-          {answered ? <Feedback item={item} selected={selected} /> : null}
+          {questionBody(true)}
         </Animated.View>
       )}
     </View>
@@ -252,9 +274,7 @@ function Feedback({
   const answerMeaning =
     item.type === "vocabulary" || item.type === "wordBank" ? item.meaning : "";
   return (
-    <Animated.View
-      entering={enterDown}
-    >
+    <Animated.View entering={enterDown}>
       <Card style={styles.feedback}>
         <View style={styles.verdict}>
           <VerdictMark correct={correct} size={22} />
@@ -352,6 +372,8 @@ const styles = StyleSheet.create({
   },
   hint: { ...type.hint, color: colors.muted },
   options: { gap: 10 },
+  split: { flexDirection: "row", alignItems: "flex-start", gap: 24 },
+  splitPane: { flex: 1 },
   feedback: { gap: 10 },
   verdict: { flexDirection: "row", alignItems: "center", gap: 6 },
   verdictText: { fontSize: 15, fontWeight: "700" },
