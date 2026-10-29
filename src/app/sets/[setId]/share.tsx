@@ -1,3 +1,5 @@
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Share, StyleSheet, Text } from "react-native";
@@ -18,8 +20,9 @@ import {
 } from "@/core/lib/share-client";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { colors, type } from "@/lib/theme";
+import { toast } from "@/platform/toast";
 
-/** 分享連結: the web dialog as a sheet; the system share sheet does the copying. */
+/** 分享連結: the web dialog as a sheet, with the system share sheet beside copying. */
 export default function ShareLinkScreen() {
   const { setId } = useLocalSearchParams<{ setId: string }>();
   const uid = useCloudStore((store) => store.user?.uid);
@@ -90,6 +93,22 @@ export default function ShareLinkScreen() {
             label="分享…"
             icon="square.and.arrow.up"
             onPress={() => void Share.share({ url })}
+          />
+          <Button
+            label={t("share.copy")}
+            icon="doc.on.doc"
+            variant="secondary"
+            onPress={() =>
+              void Clipboard.setStringAsync(url).then(
+                () => {
+                  void Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success,
+                  );
+                  toast.success(t("share.copied"));
+                },
+                () => toast.error(t("share.copyFailed")),
+              )
+            }
           />
           <Button
             label={t("share.revoke")}
