@@ -15,6 +15,8 @@ export interface CloudClient {
 const LIMIT_MESSAGES: Record<string, string> = {
   daily_write_limit:
     "今天的同步量已達上限，明天會自動繼續；資料都還保存在這台裝置上。",
+  daily_read_limit:
+    "今天的雲端讀取量已達上限，明天會自動繼續；資料都還保存在這台裝置上。",
   storage_limit:
     "雲端空間已滿（每個帳號 50 MB），刪除一些內容後才能同步新的資料。",
   account_disabled: "這個帳號已被停用，無法同步。",
