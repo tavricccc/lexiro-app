@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -122,7 +123,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-/** Deals a fresh round from the same setup choices. */
+/** Deals a fresh round from the same setup choices, when there is one to deal. */
 function NewRoundButton({
   choices,
   primary,
@@ -137,23 +138,26 @@ function NewRoundButton({
     state,
     choices.setIds,
   );
+  const entries = useMemo(
+    () =>
+      buildPracticeQueue({
+        allowedSenseIds,
+        difficulty: choices.difficulty,
+        questionGroups,
+        studyItems,
+        amount: choices.amount,
+        oneSensePerWord: choices.oneSensePerWord,
+        tasks: choices.tasks,
+      }),
+    [allowedSenseIds, choices, questionGroups, studyItems],
+  );
+  if (!entries.length) return null;
   return (
     <Button
       label="再一輪"
       icon="arrow.clockwise"
       variant={primary ? "primary" : "secondary"}
-      onPress={() => {
-        const entries = buildPracticeQueue({
-          allowedSenseIds,
-          difficulty: choices.difficulty,
-          questionGroups,
-          studyItems,
-          amount: choices.amount,
-          oneSensePerWord: choices.oneSensePerWord,
-          tasks: choices.tasks,
-        });
-        if (entries.length) onDeal(entries);
-      }}
+      onPress={() => onDeal(entries)}
     />
   );
 }
