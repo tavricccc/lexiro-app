@@ -545,6 +545,7 @@ export const zhTW = {
     questionSearchCount: "{count} / {total} 題／題組",
     noSearchResults: "本集中沒有符合的內容",
     noSearchResultsHint: "換個關鍵字，或清除搜尋查看本集全部內容。",
+    showMore: "再顯示（還有 {count} 個）",
     back: "回到詞庫",
     edit: "編輯",
     editWord: "編輯單字",
