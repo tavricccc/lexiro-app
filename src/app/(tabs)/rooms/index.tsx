@@ -90,7 +90,7 @@ export default function RoomsScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Joining is the common case: the orange poster, with the code at its size.
+  // Joining is the common case: the green poster, with the code at its size.
   poster: {
     overflow: "hidden",
     gap: 14,

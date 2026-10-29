@@ -167,7 +167,7 @@ function ReviewItem({
 
 const styles = StyleSheet.create({
   stack: { gap: 20 },
-  // The winner on the orange poster, the score at poster size.
+  // The winner on the green poster, the score at poster size.
   hero: {
     overflow: "hidden",
     gap: 4,

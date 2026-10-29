@@ -139,7 +139,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  // The account on the orange poster; the photo is cut to the bubble.
+  // The account on the green poster; the photo is cut to the bubble.
   account: {
     gap: 16,
     padding: 22,

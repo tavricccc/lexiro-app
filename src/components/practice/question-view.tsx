@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.foreground,
   },
-  // A bubble in the card's orange.
+  // A bubble in the card's green.
   speak: {
     width: 56,
     height: 38,

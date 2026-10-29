@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     fontVariant: ["tabular-nums"],
   },
-  // The clock sits in an orange bubble and turns red for the last seconds.
+  // The clock sits in a green bubble and turns red for the last seconds.
   timer: {
     paddingHorizontal: 14,
     paddingVertical: 6,

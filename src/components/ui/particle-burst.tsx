@@ -10,7 +10,7 @@ import Animated, {
 
 import { colors } from "@/lib/theme";
 
-// The card's orange, pencil ink, and the green of a right answer.
+// The card's green, pencil ink, and the brighter green of a right answer.
 const PALETTE = [
   colors.field,
   colors.foreground,

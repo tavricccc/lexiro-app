@@ -79,7 +79,8 @@ function Session({ run }: { run: PracticeRun }) {
   const [selected, setSelected] = useState<number | null>(
     saved?.selected ?? null,
   );
-  // The web's pick-then-confirm step; here a tap answers, so it stays empty.
+  // The shared actions clear the web's pending choice; this screen keeps its
+  // own `pending` below, tied to the question, so this one stays unused.
   const [, setPendingChoice] = useState<number | null>(null);
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [correct, setCorrect] = useState(saved?.correct ?? 0);

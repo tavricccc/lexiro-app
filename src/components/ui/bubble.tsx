@@ -15,7 +15,7 @@ export type BubbleState = "empty" | "filled" | "right" | "wrong";
 const FILL = { duration: 220, easing: EASE_OUT };
 
 /**
- * The answer-card bubble: an oval printed in orange around its letter, filled
+ * The answer-card bubble: an oval printed in green around its letter, filled
  * in as if by pencil when it is chosen. It is the one shape the app repeats.
  */
 export function Bubble({

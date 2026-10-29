@@ -160,7 +160,7 @@ function NewRoundButton({
 
 const styles = StyleSheet.create({
   content: { padding: space.gutter, gap: space.section },
-  // The one orange field of the session, ink on it as on the printed card.
+  // The one green field of the session, ink on it as on the printed card.
   finish: {
     gap: 6,
     padding: 24,

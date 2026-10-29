@@ -131,8 +131,8 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   panel: { gap: 28 },
-  // The answer card's orange as one poster: the latest set, how much is in
-  // it, and the way in. Ink on orange in both modes.
+  // The answer card's green as one poster: the latest set, how much is in
+  // it, and the way in. Ink on green in both modes.
   poster: {
     overflow: "hidden",
     gap: 6,

@@ -564,7 +564,7 @@ export default function SetScreen() {
   );
 }
 
-/** One of the set's sizes, at poster size on the orange. */
+/** One of the set's sizes, at poster size on the green. */
 function Figure({ value, label }: { value: number; label: string }) {
   return (
     <View>
@@ -575,7 +575,7 @@ function Figure({ value, label }: { value: number; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  // The set's size on the answer card's orange, with the way in.
+  // The set's size on the answer card's green, with the way in.
   summary: {
     overflow: "hidden",
     gap: 18,
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.foreground,
   },
-  // A bubble in the card's orange.
+  // A bubble in the card's green.
   speak: {
     width: 50,
     height: 34,

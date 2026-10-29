@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "center", gap: 22, padding: 24 },
   mark: {
     alignSelf: "center",
-    // The answer-card bubble, filled in orange.
+    // The answer-card bubble, filled in green.
     width: 108,
     height: 72,
     borderRadius: 999,

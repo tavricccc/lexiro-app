@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "center", gap: 20, padding: 24, backgroundColor: colors.canvas },
   mark: {
     alignSelf: "center",
-    // The bubble, filled in orange.
+    // The bubble, filled in green.
     width: 96,
     height: 64,
     borderRadius: 999,

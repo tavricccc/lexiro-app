@@ -13,7 +13,7 @@ import { colors } from "@/lib/theme";
 import { PressableScale } from "./pressable-scale";
 
 /**
- * `ink` and `onField` sit on the orange field, and `field` is the orange
+ * `ink` and `onField` sit on the green field, and `field` is the green
  * itself for the one action that starts a round; all three look the same in
  * both modes.
  */

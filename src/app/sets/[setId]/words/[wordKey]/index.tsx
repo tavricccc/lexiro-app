@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1.5,
     color: colors.foreground,
   },
-  // A bubble in the card's orange.
+  // A bubble in the card's green.
   speak: {
     width: 56,
     height: 38,
