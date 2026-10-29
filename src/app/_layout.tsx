@@ -10,6 +10,7 @@ import { StyleSheet, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeOut } from "react-native-reanimated";
 
+import { useAdminWatch } from "@/components/admin/admin-banner";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
 import { SignInPrompt } from "@/components/sign-in-prompt";
@@ -34,6 +35,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fonts);
   const fontsSettled = fontsLoaded || Boolean(fontError);
   useAppUpdates();
+  useAdminWatch();
 
   useEffect(() => {
     void hydrateLocalStorage().then(() => {

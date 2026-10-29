@@ -3,12 +3,14 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
+import { AdminBanner } from "@/components/admin/admin-banner";
 import { useSignIn } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { t } from "@/core/lib/i18n";
 import { syncStatusLabel } from "@/core/lib/sync-status";
+import { useAdminStore } from "@/core/stores/admin-store";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
 import { colors, latin, radius, type } from "@/lib/theme";
@@ -23,6 +25,7 @@ export default function AccountScreen() {
   const deleteAccount = useCloudStore((state) => state.deleteAccount);
   const [deleting, setDeleting] = useState(false);
   const { busy, signIn } = useSignIn();
+  const admin = useAdminStore((state) => state.admin);
 
   const name = user?.displayName || user?.email || "本機使用者";
   // The Google photo, as on the web; the initial stands in without one.
@@ -66,6 +69,7 @@ export default function AccountScreen() {
 
   return (
     <Screen>
+      <AdminBanner />
       <View style={styles.account}>
         <View style={styles.avatar}>
           {photo ? (
@@ -118,6 +122,16 @@ export default function AccountScreen() {
               onPress={() => router.push("/account/agents")}
             />
           </ListGroup>
+          {admin ? (
+            <ListGroup footer={t("admin.hint")}>
+              <ListRow
+                title={t("admin.title")}
+                icon="checkmark.shield"
+                chevron
+                onPress={() => router.push("/account/admin")}
+              />
+            </ListGroup>
+          ) : null}
           <ListGroup>
             <ListRow
               title="登出"

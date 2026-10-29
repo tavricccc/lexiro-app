@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
+import { AdminBanner } from "@/components/admin/admin-banner";
 import { SyncRefreshControl } from "@/components/sync-refresh-control";
 import { ActiveRoomCard } from "@/components/rooms/active-room-card";
 import { Bubble } from "@/components/ui/bubble";
@@ -51,6 +52,7 @@ export default function TodayScreen() {
   return (
     <Screen refreshControl={<SyncRefreshControl />}>
       <View style={styles.panel}>
+        <AdminBanner />
         <ActiveRoomCard />
         {latest ? (
           <>

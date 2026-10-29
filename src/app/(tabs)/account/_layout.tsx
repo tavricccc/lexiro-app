@@ -8,6 +8,8 @@ export default function AccountLayout() {
     <Stack screenOptions={largeTitleOptions}>
       <Stack.Screen name="index" options={{ title: "我的" }} />
       <Stack.Screen name="agents" options={{ title: t("agent.connections") }} />
+      <Stack.Screen name="admin/index" options={{ title: t("admin.title") }} />
+      <Stack.Screen name="admin/[uid]" options={{ title: t("admin.account") }} />
     </Stack>
   );
 }
