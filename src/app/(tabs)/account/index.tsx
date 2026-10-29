@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 
@@ -6,6 +7,7 @@ import { useSignIn } from "@/components/sign-in-prompt";
 import { Button } from "@/components/ui/button";
 import { Screen } from "@/components/ui/layout";
 import { ListGroup, ListRow } from "@/components/ui/list";
+import { t } from "@/core/lib/i18n";
 import { syncStatusLabel } from "@/core/lib/sync-status";
 import { useCloudStore } from "@/core/stores/cloud-store";
 import { useLibraryStore } from "@/core/stores/library-store";
@@ -106,6 +108,14 @@ export default function AccountScreen() {
               title="立即同步"
               icon="arrow.triangle.2.circlepath"
               onPress={status === "syncing" ? undefined : () => void sync({ reconcileAccount: true })}
+            />
+          </ListGroup>
+          <ListGroup footer={t("agent.connectionsHint")}>
+            <ListRow
+              title={t("agent.connections")}
+              icon="app.connected.to.app.below.fill"
+              chevron
+              onPress={() => router.push("/account/agents")}
             />
           </ListGroup>
           <ListGroup>
