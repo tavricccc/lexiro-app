@@ -240,6 +240,7 @@ export const zhTW = {
     searchHere: "搜尋目前位置",
     itemCount: "{count} 個項目",
     openFolder: "開啟資料夾 {name}",
+    setActions: "「{name}」的更多動作",
     emptyFolderTitle: "這個資料夾是空的",
     emptyFolderDescription: "在這裡新增資料夾，或建立一個單字集。",
     searchHint: "換個關鍵字，或回到上一層搜尋。",
