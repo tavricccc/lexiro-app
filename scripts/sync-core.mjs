@@ -32,18 +32,23 @@ const SOURCES = [
       "app-update.ts",
       "browse-routes.ts",
       "cn.ts",
+      // The app keeps its own in src/lib, on AsyncStorage.
+      "last-practiced.ts",
+      "legacy-redirects.ts",
       "navigation-memory.ts",
       "pwa-install.ts",
       "routes.ts",
       "speech.ts",
       "use-app-router.ts",
+      "use-document-title.ts",
     ],
   ],
   ["stores", "stores", ["app-update-store.ts", "ui-store.ts"]],
   [
     "components",
     "components",
-    ["ui", "use-practice-keyboard.ts"],
+    // question-links builds web addresses from browse-routes, which stays out.
+    ["ui", "use-practice-keyboard.ts", "question-links.ts"],
   ],
   ["packages/ai-contract/src", "ai-contract", []],
   ["src/generated", "generated", []],
@@ -80,8 +85,9 @@ const REWRITES = [
  */
 const PATCHES = {
   "stores/cloud-store.ts": [
+    // The popup and its redirect fallback are both browser sign-ins.
     [
-      "await runtime.signInWithPopup(auth, new runtime.GoogleAuthProvider());",
+      "const provider = new runtime.GoogleAuthProvider();\n    try {\n      await runtime.signInWithPopup(auth, provider);\n    } catch (reason) {\n      // A blocked popup (in-app browsers, strict settings) cannot sign in at\n      // all, so fall back to a full-page redirect. Closing the popup by hand\n      // is the user's choice and stays an error.\n      const code = (reason as { code?: string } | null)?.code;\n      if (\n        code !== \"auth/popup-blocked\" &&\n        code !== \"auth/operation-not-supported-in-this-environment\"\n      ) {\n        throw reason;\n      }\n      await runtime.signInWithRedirect(auth, provider);\n    }",
       'await (await import("@/platform/sign-in")).signInWithGoogle(auth);',
     ],
     // Signing in again stands in for reauthentication; the store checks the uid.

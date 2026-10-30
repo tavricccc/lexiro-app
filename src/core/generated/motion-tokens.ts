@@ -6,7 +6,7 @@
 export const motionSeconds = {
   touch: 0.1,
   control: 0.25,
-  nav: 0.46,
+  nav: 0.5,
   sheet: 0.56,
   controlExit: 0.19,
   sheetExit: 0.38,

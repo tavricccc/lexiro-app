@@ -1,6 +1,4 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-"use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { serializeAccountDataAction } from "@/core/lib/account-data-queue";
 import { getStorageNamespace } from "@/core/lib/persist";

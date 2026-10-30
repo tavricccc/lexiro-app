@@ -1,6 +1,4 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-"use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DraftPersistence } from "@/core/lib/draft-persistence";
 

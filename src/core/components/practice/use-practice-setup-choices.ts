@@ -1,6 +1,4 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-"use client";
-
 import { useState } from "react";
 
 import { useResumableDraft } from "@/core/lib/use-resumable-draft";

@@ -1,6 +1,4 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-"use client";
-
 import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 

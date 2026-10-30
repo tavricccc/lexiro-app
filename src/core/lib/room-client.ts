@@ -1,6 +1,4 @@
 // Synced from the lexiro web repo by scripts/sync-core.mjs; edit there, not here.
-"use client";
-
 import type { PracticeQuestionTask } from "@/core/types";
 import type { PracticeEntry } from "@/core/components/practice/practice-queue";
 import { agentJson, agentWorkerUrl } from "@/core/lib/agent-client";
